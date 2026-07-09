@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14170F">
+<title>My Daily Plate</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Public+Sans:wght@400;500;600&display=swap');
+:root{
+  --bg:#14170F; --card:#1E2318; --cardsoft:#232919; --line:#31392A;
+  --turmeric:#E9A03B; --chili:#C96A3B; --leaf:#9BBF6A;
+  --text:#F1EDE2; --muted:#9A9C8B; --faint:#6C7060;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Public Sans',system-ui,sans-serif;padding-bottom:60px}
+.wrap{max-width:480px;margin:0 auto;padding:20px 16px calc(20px + env(safe-area-inset-bottom))}
+.serif{font-family:'Fraunces',Georgia,serif}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:8px;font-size:13px}
+input{font-family:inherit;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px 12px;font-size:15px;width:100%}
+input:focus{outline:1px solid var(--turmeric)}
+.hdr{display:flex;justify-content:space-between;align-items:baseline}
+.h1{font-family:'Fraunces',Georgia,serif;font-size:26px;font-weight:650}
+.sub{color:var(--muted);font-size:13px;margin-top:2px}
+.chip{font-size:12px;font-weight:500;margin-left:8px;font-family:'Public Sans',sans-serif}
+.btn-ghost{background:none;border:1px solid var(--line);color:var(--muted);padding:5px 10px;font-size:12px}
+.card{background:var(--card);border-radius:16px;padding:18px 14px 16px;margin-top:16px}
+.rings{display:flex;justify-content:space-around}
+.ring{display:flex;flex-direction:column;align-items:center;gap:4px}
+.ring .lbl{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.ring .sub2{font-size:10px;color:var(--faint)}
+.mealbar{display:flex;height:10px;border-radius:6px;overflow:hidden;background:var(--line);margin-top:14px}
+.legend{display:flex;gap:12px;margin-top:6px;flex-wrap:wrap}
+.legend div{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:4px;display:inline-block}
+.meal{margin-top:18px}
+.meal-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.meal-title{display:flex;align-items:center;gap:8px}
+.meal-title .name{font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:500}
+.meal-title .cal{font-size:12px;color:var(--faint)}
+.dot9{width:9px;height:9px;border-radius:5px}
+.addbtn{background:var(--cardsoft);color:var(--turmeric);padding:6px 12px;font-weight:600}
+.addbtn.open{background:var(--turmeric);color:#1a1508}
+.empty{font-size:12px;color:var(--faint);padding:4px 2px}
+.entry{background:var(--card);border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.entry .nm{font-size:14px;line-height:1.3}
+.entry .meta{font-size:11px;color:var(--muted);margin-top:2px}
+.entry .x{background:none;color:var(--faint);font-size:18px;padding:4px 6px}
+.panel{background:var(--cardsoft);border-radius:12px;padding:12px;margin-bottom:6px;border:1px solid var(--line)}
+.results{max-height:230px;overflow-y:auto;margin-top:8px}
+.food-row{display:flex;width:100%;text-align:left;background:none;border-bottom:1px solid var(--line);padding:9px 4px;color:var(--text);gap:8px;align-items:center;border-radius:0}
+.food-row .fn{flex:1;font-size:13.5px;line-height:1.3}
+.food-row .fm{font-size:11px;color:var(--muted);white-space:nowrap}
+.food-row .tag{font-size:9px;color:var(--faint);border:1px solid var(--line);border-radius:4px;padding:1px 4px}
+.manual{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
+.manual .lbl{font-size:12px;color:var(--muted);margin-bottom:6px}
+.row2{display:flex;gap:8px;margin-top:8px}
+.row2 label{flex:1;font-size:11px;color:var(--muted)}
+.row2 input{margin-top:3px;background:var(--cardsoft);padding:7px 9px;font-size:14px}
+.confirm{width:100%;margin-top:10px;background:var(--leaf);color:#141a0c;padding:10px 0;font-size:14px;font-weight:600}
+.hist-btn{width:100%;background:var(--card);color:var(--muted);border:1px solid var(--line);padding:11px 0;margin-top:26px}
+.hist{background:var(--card);border-radius:12px;padding:14px;margin-top:26px}
+.hist .row{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line)}
+.foot{text-align:center;font-size:11px;color:var(--faint);margin-top:22px;line-height:1.6}
+.foot button{background:none;color:var(--faint);text-decoration:underline;font-size:11px;padding:0}
+.targets{background:var(--card);border-radius:12px;padding:14px;margin-top:12px;display:flex;gap:12px}
+.targets label{flex:1;font-size:12px;color:var(--muted)}
+.targets input{margin-top:4px}
+.checkline{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin-top:10px}
+.checkline input{width:auto}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <div>
+      <div class="h1">Today's plate<span id="saveChip" class="chip"></span></div>
+      <div class="sub" id="dateLabel"></div>
+    </div>
+    <button class="btn-ghost" onclick="toggleTargets()">Targets</button>
+  </div>
+
+  <div id="targetsPanel" class="targets hide">
+    <label>Calories<input type="number" id="tCal" onchange="saveTargets()"></label>
+    <label>Protein (g)<input type="number" id="tPro" onchange="saveTargets()"></label>
+  </div>
+
+  <div class="card">
+    <div class="rings">
+      <div class="ring">
+        <svg width="88" height="88" viewBox="0 0 88 88">
+          <circle cx="44" cy="44" r="34" fill="none" stroke="var(--line)" stroke-width="7"/>
+          <circle id="ringCal" cx="44" cy="44" r="34" fill="none" stroke="var(--turmeric)" stroke-width="7" stroke-linecap="round" transform="rotate(-90 44 44)" style="transition:stroke-dashoffset .5s"/>
+          <text id="ringCalNum" x="44" y="42" text-anchor="middle" fill="var(--text)" font-size="17" font-weight="600" font-family="Fraunces,Georgia,serif">0</text>
+          <text id="ringCalMax" x="44" y="56" text-anchor="middle" fill="var(--faint)" font-size="9"></text>
+        </svg>
+        <div class="lbl">Calories</div><div class="sub2" id="calSub"></div>
+      </div>
+      <div class="ring">
+        <svg width="88" height="88" viewBox="0 0 88 88">
+          <circle cx="44" cy="44" r="34" fill="none" stroke="var(--line)" stroke-width="7"/>
+          <circle id="ringPro" cx="44" cy="44" r="34" fill="none" stroke="var(--leaf)" stroke-width="7" stroke-linecap="round" transform="rotate(-90 44 44)" style="transition:stroke-dashoffset .5s"/>
+          <text id="ringProNum" x="44" y="42" text-anchor="middle" fill="var(--text)" font-size="17" font-weight="600" font-family="Fraunces,Georgia,serif">0</text>
+          <text id="ringProMax" x="44" y="56" text-anchor="middle" fill="var(--faint)" font-size="9"></text>
+        </svg>
+        <div class="lbl">Protein g</div><div class="sub2" id="proSub"></div>
+      </div>
+    </div>
+    <div id="mealBarWrap"></div>
+  </div>
+
+  <div id="meals"></div>
+
+  <div id="histWrap"><button class="hist-btn" onclick="loadHistory()">Show last 7 days</button></div>
+
+  <div class="foot">
+    Estimates only — tweak any number before adding.<br>
+    <button onclick="exportData()">Backup my data</button> · <button onclick="document.getElementById('importFile').click()">Restore backup</button>
+    <input type="file" id="importFile" class="hide" accept=".json" onchange="importData(event)">
+  </div>
+</div>
+
+<script>
+// ================= Food database =================
+// [name, calories, protein g] per typical serving
+const DB = [
+// --- South Indian ---
+["Idli (2)", 120, 4], ["Idli (3)", 180, 6], ["Dosa, plain (1)", 135, 3], ["2 dosas", 270, 5],
+["Masala dosa (1)", 300, 6], ["Rava dosa (1)", 200, 4], ["Set dosa (2)", 260, 5],
+["Uttapam (1)", 210, 5], ["Medu vada (2)", 220, 6], ["Sambar (1 cup)", 130, 6],
+["Rasam (1 cup)", 60, 2], ["Coconut chutney (2 tbsp)", 70, 1], ["Milagai podi + gingelly oil (2 tbsp)", 120, 3],
+["Upma (1 cup)", 250, 5], ["Ven pongal (1 cup)", 300, 8], ["Poha (1 cup)", 210, 4],
+["Curd rice (1 cup)", 230, 7], ["Lemon rice (1 cup)", 250, 4], ["Tamarind rice (1 cup)", 270, 4],
+["Sambar rice (1 cup)", 280, 8], ["Idiyappam (2)", 180, 3], ["Appam (2)", 240, 3],
+["Adai (1)", 190, 8], ["Pesarattu (1)", 180, 9],
+// --- North Indian / general Indian ---
+["Chapati / roti (1)", 100, 3], ["2 chapatis", 200, 6], ["Paratha, plain (1)", 210, 4],
+["Aloo paratha (1)", 290, 6], ["Naan (1)", 260, 8], ["Poori (2)", 300, 5],
+["Dal (1 cup)", 200, 12], ["Dal tadka (1 cup)", 220, 11], ["Dal makhani (1 cup)", 320, 12],
+["Chana masala (1 cup)", 280, 12], ["Rajma (1 cup)", 260, 13], ["Chole (1 cup)", 290, 12],
+["Paneer curry (1 cup)", 300, 14], ["Palak paneer (1 cup)", 280, 13], ["Paneer butter masala (1 cup)", 370, 14],
+["Paneer tikka (6 pcs)", 280, 18], ["Paneer (100g raw)", 265, 18], ["Aloo gobi (1 cup)", 180, 4],
+["Bhindi masala (1 cup)", 150, 3], ["Baingan bharta (1 cup)", 170, 3], ["Veg korma (1 cup)", 250, 5],
+["Indian curry, veg (1 cup)", 200, 6], ["Veg biryani (1 plate)", 450, 9], ["Veg pulao (1 cup)", 280, 5],
+["Jeera rice (1 cup)", 250, 4], ["Khichdi (1 cup)", 240, 8], ["Pav bhaji (1 plate)", 400, 9],
+["Samosa (1)", 260, 4], ["Kachori (1)", 190, 3], ["Dhokla (2 pcs)", 160, 5],
+["Pakora (5 pcs)", 230, 5], ["Bhel puri (1 plate)", 220, 5], ["Masala vada (2)", 220, 6],
+// --- Indian sweets ---
+["Gulab jamun (1)", 150, 2], ["Rasgulla (1)", 105, 2], ["Laddu (1)", 180, 3],
+["Mysore pak (1 pc)", 200, 2], ["Jalebi (2 pcs)", 190, 1], ["Kheer / payasam (1/2 cup)", 180, 4],
+["Halwa (1/2 cup)", 250, 3], ["Barfi (1 pc)", 130, 3], ["Small Indian sweet", 150, 2], ["Small cake slice", 150, 2],
+// --- His staples / breakfast ---
+["Protein smoothie (Orgain 2 scoops, almond milk, berries, banana, chia)", 480, 27],
+["Orgain protein powder (2 scoops)", 160, 21], ["Kirkland protein bar", 190, 21], ["RX Bar", 210, 12],
+["Almonds (small handful, ~23)", 170, 6], ["Cashews (small handful)", 160, 5], ["Peanuts (small handful)", 160, 7],
+["Walnuts (small handful)", 185, 4], ["Dry grapes / raisins (small handful)", 85, 1],
+["Dates (3)", 200, 1], ["Peanut butter (2 tbsp)", 190, 8],
+// --- Fruits ---
+["Apple", 95, 0], ["Banana", 105, 1], ["Orange", 62, 1], ["Mango (1 cup)", 100, 1],
+["Grapes (1 cup)", 62, 1], ["Watermelon (1 cup)", 46, 1], ["Berries (1/2 cup)", 40, 1],
+["Pomegranate (1/2 cup)", 72, 1], ["Avocado (half)", 120, 2], ["Guava (1)", 60, 2],
+// --- Dairy / eggs / protein ---
+["Greek yogurt (1 cup)", 100, 17], ["Greek yogurt (1/2 cup)", 60, 9], ["Curd / yogurt (1 cup)", 150, 8],
+["Milk, whole (1 cup)", 150, 8], ["Milk, 2% (1 cup)", 120, 8], ["Almond milk (1 cup)", 40, 1],
+["Buttermilk (1 cup)", 100, 8], ["Lassi, sweet (1 cup)", 220, 6], ["Cheese slice (1)", 70, 4],
+["Cottage cheese (1/2 cup)", 90, 12], ["2-egg omelette", 180, 12], ["Boiled egg (1)", 78, 6],
+["Scrambled eggs (2)", 200, 12], ["Egg whites (4)", 68, 14], ["Tofu (100g)", 76, 8],
+["Soya chunks (50g dry)", 170, 26], ["Whey protein (1 scoop)", 120, 24],
+// --- Grains / staples ---
+["Brown rice (1 cup cooked)", 215, 5], ["Brown rice (2 servings)", 430, 10], ["White rice (1 cup cooked)", 205, 4],
+["Quinoa (1 cup cooked)", 220, 8], ["Oatmeal (1 cup cooked)", 160, 6], ["Oats with milk (1 bowl)", 250, 10],
+["Bread slice (1)", 80, 3], ["Toast with butter (2)", 220, 6], ["Cereal with milk (1 bowl)", 250, 8],
+["Pasta, marinara (1.5 cups)", 350, 10], ["Mac and cheese (1 cup)", 350, 12], ["Veggie noodles / maggi (1 pack)", 350, 8],
+// --- Western / eating out ---
+["Cheese pizza (1 slice)", 285, 12], ["Veggie pizza (1 slice)", 260, 10], ["Veggie burger", 390, 15],
+["French fries (medium)", 365, 4], ["Grilled cheese sandwich", 400, 14], ["Veggie sandwich", 300, 10],
+["Veggie wrap / burrito", 450, 14], ["Bean burrito", 380, 14], ["Falafel wrap", 500, 15],
+["Hummus (1/4 cup) + pita", 280, 8], ["Caesar salad, no chicken", 220, 6], ["Garden salad + dressing", 150, 3],
+["Veg fried rice (1.5 cups)", 400, 8], ["Veg noodles / chow mein (1.5 cups)", 380, 9], ["Gobi manchurian (1 cup)", 300, 6],
+["Veg spring rolls (2)", 200, 4], ["Quesadilla, cheese", 470, 18], ["Chips and salsa (basket share)", 250, 4],
+// --- Snacks ---
+["Chips (small serving)", 150, 2], ["Potato chips (1 oz bag)", 160, 2], ["Popcorn (3 cups)", 95, 3],
+["Murukku (2 pcs)", 170, 2], ["Mixture / chivda (1/2 cup)", 250, 5], ["Banana chips (1/2 cup)", 210, 1],
+["Trail mix (1/4 cup)", 170, 5], ["Granola bar", 140, 3], ["Dark chocolate (2 squares)", 110, 1],
+["Cookie (1)", 80, 1], ["Ice cream (1 scoop)", 140, 2], ["Donut (1)", 250, 3],
+// --- Veggies ---
+["Veggies, mixed (1 cup)", 50, 2], ["Salad, plain (1 bowl)", 35, 2], ["Sweet potato (1 medium)", 100, 2],
+["Corn (1 cup)", 130, 5], ["Edamame (1 cup)", 190, 17], ["Broccoli (1 cup)", 55, 4],
+// --- Drinks ---
+["Chai with milk & sugar (1 cup)", 100, 2], ["Filter coffee (1 cup)", 90, 2], ["Black coffee", 5, 0],
+["Coconut water (1 cup)", 46, 2], ["Orange juice (1 cup)", 110, 2], ["Mango lassi (1 cup)", 260, 6],
+["Soda (12 oz)", 140, 0], ["Beer (12 oz)", 150, 2], ["Wine (5 oz)", 125, 0],
+// --- Supplements ---
+["Creatine 5g", 0, 0], ["Chia seeds (1 tbsp)", 60, 2], ["Flax seeds (1 tbsp)", 55, 2],
+];
+
+// His usual foods, pre-pinned to meals
+const DEFAULT_FOODS = [
+  {id:"f1", name:"Protein smoothie (Orgain 2 scoops, almond milk, berries, banana, chia)", cal:480, protein:27, meal:"Morning"},
+  {id:"f2", name:"Kirkland protein bar", cal:190, protein:21, meal:"Morning"},
+  {id:"f3", name:"RX Bar", cal:210, protein:12, meal:"Morning"},
+  {id:"f4", name:"Almonds (small handful, ~23)", cal:170, protein:6, meal:"Morning"},
+  {id:"f5", name:"Dry grapes / raisins (small handful)", cal:85, protein:1, meal:"Morning"},
+  {id:"f6", name:"Apple", cal:95, protein:0, meal:"Morning"},
+  {id:"f7", name:"Orange", cal:62, protein:1, meal:"Morning"},
+  {id:"f8", name:"Brown rice (2 servings)", cal:430, protein:10, meal:"Afternoon"},
+  {id:"f9", name:"2-egg omelette", cal:180, protein:12, meal:"Afternoon"},
+  {id:"f10", name:"Chips (small serving)", cal:150, protein:2, meal:"Afternoon"},
+  {id:"f11", name:"Greek yogurt (1 cup)", cal:100, protein:17, meal:"Afternoon"},
+  {id:"f12", name:"Veggies, mixed (1 cup)", cal:50, protein:2, meal:"Afternoon"},
+  {id:"f13", name:"Indian curry, veg (1 cup)", cal:200, protein:6, meal:"Afternoon"},
+  {id:"f14", name:"Small Indian sweet", cal:150, protein:2, meal:"Afternoon"},
+  {id:"f15", name:"2 dosas", cal:270, protein:5, meal:"Evening"},
+  {id:"f16", name:"Milagai podi + gingelly oil (2 tbsp)", cal:120, protein:3, meal:"Evening"},
+  {id:"f17", name:"Greek yogurt (1/2 cup)", cal:60, protein:9, meal:"Evening"},
+  {id:"f18", name:"2 chapatis", cal:200, protein:6, meal:"Evening"},
+  {id:"f19", name:"Paneer curry (1 cup)", cal:300, protein:14, meal:"Evening"},
+  {id:"f20", name:"Dal (1 cup)", cal:200, protein:12, meal:"Evening"},
+  {id:"f21", name:"Creatine 5g", cal:0, protein:0, meal:"Other"},
+];
+
+const MEALS = ["Morning","Afternoon","Evening","Other"];
+const MEAL_COLORS = {Morning:"#E9A03B", Afternoon:"#C96A3B", Evening:"#9BBF6A", Other:"#7E8CA8"};
+const CIRC = 2*Math.PI*34;
+
+// ================= State & storage =================
+const todayKey = () => {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+};
+const uid = () => Math.random().toString(36).slice(2,10);
+const LS = {
+  get(k, fb){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } }
+};
+
+let dateKey = todayKey();
+let foods = LS.get("mdp_foods", null);
+if (!foods) { foods = DEFAULT_FOODS; LS.set("mdp_foods", foods); }
+let log = LS.get("mdp_log_" + dateKey, []);
+let targets = LS.get("mdp_targets", {cal:2200, protein:132});
+let addingTo = null;
+
+// ================= Rendering =================
+function flashSave(ok){
+  const chip = document.getElementById("saveChip");
+  chip.textContent = ok ? "Saved ✓" : "Not saved";
+  chip.style.color = ok ? "var(--leaf)" : "var(--chili)";
+  if (ok) setTimeout(() => { chip.textContent = ""; }, 2000);
+}
+
+function persistLog(){
+  const ok = LS.set("mdp_log_" + dateKey, log);
+  flashSave(ok);
+  renderTotals();
+  renderMeals();
+}
+
+function renderTotals(){
+  const cal = log.reduce((s,e)=>s+e.cal,0);
+  const pro = log.reduce((s,e)=>s+e.protein,0);
+  const setRing = (id, numId, maxId, val, max) => {
+    const pct = Math.min(1, max>0 ? val/max : 0);
+    const el = document.getElementById(id);
+    el.setAttribute("stroke-dasharray", CIRC);
+    el.setAttribute("stroke-dashoffset", CIRC*(1-pct));
+    document.getElementById(numId).textContent = Math.round(val);
+    document.getElementById(maxId).textContent = "/ " + max;
+  };
+  setRing("ringCal","ringCalNum","ringCalMax",cal,targets.cal);
+  setRing("ringPro","ringProNum","ringProMax",pro,targets.protein);
+  document.getElementById("calSub").textContent = cal > targets.cal ? (cal-targets.cal)+" over" : (targets.cal-cal)+" left";
+  document.getElementById("proSub").textContent = pro >= targets.protein ? "target hit" : (targets.protein-pro)+"g to go";
+  // meal bar
+  const totals = MEALS.map(m => ({m, cal: log.filter(e=>e.meal===m).reduce((s,e)=>s+e.cal,0)})).filter(t=>t.cal>0);
+  const total = totals.reduce((s,t)=>s+t.cal,0);
+  const denom = Math.max(targets.cal, total);
+  const wrap = document.getElementById("mealBarWrap");
+  if (!total) { wrap.innerHTML=""; return; }
+  wrap.innerHTML = '<div class="mealbar">' +
+    totals.map(t=>`<div style="width:${(t.cal/denom*100).toFixed(1)}%;background:${MEAL_COLORS[t.m]}"></div>`).join("") +
+    '</div><div class="legend">' +
+    totals.map(t=>`<div><span class="dot" style="background:${MEAL_COLORS[t.m]}"></span>${t.m} ${t.cal}</div>`).join("") + '</div>';
+}
+
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+function renderMeals(){
+  const root = document.getElementById("meals");
+  root.innerHTML = MEALS.map(meal => {
+    const entries = log.filter(e=>e.meal===meal);
+    const mealCal = entries.reduce((s,e)=>s+e.cal,0);
+    const open = addingTo === meal;
+    return `<div class="meal">
+      <div class="meal-hd">
+        <div class="meal-title">
+          <span class="dot9" style="background:${MEAL_COLORS[meal]}"></span>
+          <span class="name">${meal}</span>
+          ${mealCal ? `<span class="cal">${mealCal} cal</span>` : ""}
+        </div>
+        <button class="addbtn ${open?'open':''}" onclick="toggleAdd('${meal}')">${open ? "Close" : "+ Add"}</button>
+      </div>
+      ${!entries.length && !open ? '<div class="empty">Nothing logged yet.</div>' : ""}
+      ${entries.map(e=>`<div class="entry">
+        <div style="flex:1;min-width:0"><div class="nm">${esc(e.name)}</div><div class="meta">${e.cal} cal · ${e.protein}g protein</div></div>
+        <button class="x" onclick="removeEntry('${e.id}')" aria-label="Remove">✕</button>
+      </div>`).join("")}
+      ${open ? addPanel(meal) : ""}
+    </div>`;
+  }).join("");
+  if (addingTo) {
+    const inp = document.getElementById("searchInput");
+    if (inp) { inp.addEventListener("input", ()=>renderResults(addingTo)); }
+    renderResults(addingTo);
+  }
+}
+
+function addPanel(meal){
+  return `<div class="panel">
+    <input id="searchInput" placeholder="Search foods… (e.g. dosa, pizza, dal)" autocomplete="off">
+    <div class="results" id="results"></div>
+    <div class="manual">
+      <div class="lbl">Not found? Add it manually:</div>
+      <input id="mName" placeholder="Food name">
+      <div class="row2">
+        <label>Calories<input type="number" id="mCal" inputmode="numeric"></label>
+        <label>Protein (g)<input type="number" id="mPro" inputmode="numeric"></label>
+      </div>
+      <label class="checkline"><input type="checkbox" id="mSave" checked>Save to my foods for next time</label>
+      <button class="confirm" onclick="addManual('${meal}')">Add to ${meal}</button>
+    </div>
+  </div>`;
+}
+
+function renderResults(meal){
+  const q = (document.getElementById("searchInput")?.value || "").toLowerCase().trim();
+  const box = document.getElementById("results");
+  if (!box) return;
+  // My foods first (meal-matched to top when no query), then database
+  let mine = foods.filter(f => f.name.toLowerCase().includes(q));
+  if (!q) mine = [...mine.filter(f=>f.meal===meal), ...mine.filter(f=>f.meal!==meal)];
+  const mineNames = new Set(mine.map(f=>f.name));
+  const db = q ? DB.filter(([n]) => n.toLowerCase().includes(q) && !mineNames.has(n)).slice(0, 25) : [];
+  let html = mine.slice(0, q ? 25 : 12).map(f =>
+    `<button class="food-row" onclick="addFromLibrary('${f.id}','${meal}')">
+      <span class="fn">${esc(f.name)}</span><span class="tag">mine</span><span class="fm">${f.cal} · ${f.protein}g</span>
+    </button>`).join("");
+  html += db.map(([n,c,p]) =>
+    `<button class="food-row" onclick="addFromDB('${esc(n).replace(/'/g,"\\'")}',${c},${p},'${meal}')">
+      <span class="fn">${esc(n)}</span><span class="fm">${c} · ${p}g</span>
+    </button>`).join("");
+  box.innerHTML = html || '<div class="empty" style="padding:8px">No match — add it manually below.</div>';
+}
+
+// ================= Actions =================
+function toggleAdd(meal){ addingTo = addingTo === meal ? null : meal; renderMeals(); }
+
+function addEntry(name, cal, protein, meal){
+  log.push({id:uid(), name, cal, protein, meal, ts:Date.now()});
+  addingTo = null;
+  persistLog();
+}
+
+function addFromLibrary(fid, meal){
+  const f = foods.find(x=>x.id===fid);
+  if (f) addEntry(f.name, f.cal, f.protein, meal);
+}
+
+function addFromDB(name, cal, protein, meal){
+  addEntry(name, cal, protein, meal);
+}
+
+function addManual(meal){
+  const name = document.getElementById("mName").value.trim();
+  const cal = Number(document.getElementById("mCal").value) || 0;
+  const pro = Number(document.getElementById("mPro").value) || 0;
+  if (!name) return;
+  if (document.getElementById("mSave").checked){
+    foods.push({id:uid(), name, cal, protein:pro, meal});
+    LS.set("mdp_foods", foods);
+  }
+  addEntry(name, cal, pro, meal);
+}
+
+function removeEntry(id){ log = log.filter(e=>e.id!==id); persistLog(); }
+
+function toggleTargets(){
+  const p = document.getElementById("targetsPanel");
+  p.classList.toggle("hide");
+  document.getElementById("tCal").value = targets.cal;
+  document.getElementById("tPro").value = targets.protein;
+}
+function saveTargets(){
+  targets = {cal: Number(document.getElementById("tCal").value)||0, protein: Number(document.getElementById("tPro").value)||0};
+  LS.set("mdp_targets", targets);
+  renderTotals();
+}
+
+function loadHistory(){
+  const days = [];
+  for (let i = 1; i <= 7; i++){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const k = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    const entries = LS.get("mdp_log_"+k, null);
+    if (entries) days.push({date:k, cal:entries.reduce((s,e)=>s+e.cal,0), protein:entries.reduce((s,e)=>s+e.protein,0)});
+  }
+  document.getElementById("histWrap").innerHTML = `<div class="hist">
+    <div class="serif" style="font-size:16px;margin-bottom:10px">Past days</div>
+    ${days.length ? days.map(d=>`<div class="row"><span style="color:var(--muted)">${d.date}</span><span>${d.cal} cal · <span style="color:var(--leaf)">${d.protein}g</span></span></div>`).join("")
+      : '<div class="empty">No past days yet — today is day one.</div>'}
+  </div>`;
+}
+
+function exportData(){
+  const data = {};
+  for (let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if (k.startsWith("mdp_")) data[k] = localStorage.getItem(k);
+  }
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "my-daily-plate-backup-" + todayKey() + ".json";
+  a.click();
+}
+function importData(ev){
+  const file = ev.target.files[0];
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const data = JSON.parse(r.result);
+      Object.keys(data).forEach(k => { if (k.startsWith("mdp_")) localStorage.setItem(k, data[k]); });
+      location.reload();
+    } catch { alert("Couldn't read that backup file."); }
+  };
+  r.readAsText(file);
+}
+
+// ================= Init =================
+document.getElementById("dateLabel").textContent = new Date().toLocaleDateString(undefined, {weekday:"long", month:"short", day:"numeric"});
+renderTotals();
+renderMeals();
+
+// Roll over to a new day if app stays open past midnight
+setInterval(() => {
+  if (todayKey() !== dateKey){
+    dateKey = todayKey();
+    log = LS.get("mdp_log_"+dateKey, []);
+    document.getElementById("dateLabel").textContent = new Date().toLocaleDateString(undefined, {weekday:"long", month:"short", day:"numeric"});
+    renderTotals(); renderMeals();
+  }
+}, 60000);
+
+// Service worker for offline use
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
