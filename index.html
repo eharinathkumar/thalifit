@@ -137,6 +137,12 @@ const DB = [
 ["Curd rice (1 cup)", 230, 7], ["Lemon rice (1 cup)", 250, 4], ["Tamarind rice (1 cup)", 270, 4],
 ["Sambar rice (1 cup)", 280, 8], ["Idiyappam (2)", 180, 3], ["Appam (2)", 240, 3],
 ["Adai (1)", 190, 8], ["Pesarattu (1)", 180, 9],
+["Kozhukattai / kolukattai, sweet (2)", 220, 3], ["Kozhukattai / kolukattai, savory (2)", 160, 4],
+["Rava idli (2)", 160, 4], ["Podi idli (1 plate)", 250, 6], ["Ghee roast dosa (1)", 380, 6],
+["Onion uttapam (1)", 250, 6], ["Paniyaram (4)", 220, 5], ["Mysore bonda (2)", 220, 4],
+["Parotta (1)", 300, 6], ["Veg kothu parotta (1 plate)", 500, 10], ["Bisi bele bath (1 cup)", 350, 9],
+["Semiya upma (1 cup)", 230, 5], ["Sundal (1 cup)", 180, 8], ["Rava kesari (1/2 cup)", 280, 3],
+["Vada pav (1)", 300, 7],
 // --- North Indian / general Indian ---
 ["Chapati / roti (1)", 100, 3], ["2 chapatis", 200, 6], ["Paratha, plain (1)", 210, 4],
 ["Aloo paratha (1)", 290, 6], ["Naan (1)", 260, 8], ["Poori (2)", 300, 5],
@@ -149,13 +155,26 @@ const DB = [
 ["Jeera rice (1 cup)", 250, 4], ["Khichdi (1 cup)", 240, 8], ["Pav bhaji (1 plate)", 400, 9],
 ["Samosa (1)", 260, 4], ["Kachori (1)", 190, 3], ["Dhokla (2 pcs)", 160, 5],
 ["Pakora (5 pcs)", 230, 5], ["Bhel puri (1 plate)", 220, 5], ["Masala vada (2)", 220, 6],
+["Matar paneer (1 cup)", 300, 13], ["Shahi paneer (1 cup)", 400, 14], ["Kadai paneer (1 cup)", 330, 14],
+["Paneer bhurji (1 cup)", 280, 16], ["Malai kofta (1 cup)", 400, 10], ["Dum aloo (1 cup)", 290, 5],
+["Jeera aloo (1 cup)", 200, 4], ["Aloo sabzi (1 cup)", 180, 4], ["Mix veg curry (1 cup)", 200, 5],
+["Mushroom masala (1 cup)", 220, 7], ["Kadhi pakora (1 cup)", 240, 8], ["Sarson ka saag (1 cup)", 250, 8],
+["Makki di roti (1)", 200, 5], ["Missi roti (1)", 160, 6], ["Tandoori roti (1)", 120, 4],
+["Butter naan (1)", 320, 9], ["Bhatura (1)", 290, 6], ["Chole bhature (1 plate)", 550, 14],
+["Aloo tikki (2)", 220, 4], ["Pani puri (6)", 180, 3], ["Dahi vada (2)", 240, 8],
+["Papdi chaat (1 plate)", 300, 7], ["Veg thali (full)", 700, 20],
+["Costco flour tortilla (1)", 150, 4], ["Costco tortilla with butter (1)", 220, 4],
 // --- Indian sweets ---
 ["Gulab jamun (1)", 150, 2], ["Rasgulla (1)", 105, 2], ["Laddu (1)", 180, 3],
 ["Mysore pak (1 pc)", 200, 2], ["Jalebi (2 pcs)", 190, 1], ["Kheer / payasam (1/2 cup)", 180, 4],
 ["Halwa (1/2 cup)", 250, 3], ["Barfi (1 pc)", 130, 3], ["Small Indian sweet", 150, 2], ["Small cake slice", 150, 2],
+["Rasmalai (1)", 180, 5], ["Kaju katli (2 pcs)", 200, 3], ["Gajar ka halwa (1/2 cup)", 250, 4],
+["Soan papdi (1 pc)", 150, 2], ["Peda (1)", 110, 2],
 // --- His staples / breakfast ---
 ["Protein smoothie (Orgain 2 scoops, almond milk, berries, banana, chia)", 480, 27],
+["Avocado blueberry smoothie (Orgain 2 scoops, almond milk)", 360, 24],
 ["Orgain protein powder (2 scoops)", 160, 21], ["Kirkland protein bar", 190, 21], ["RX Bar", 210, 12],
+["Pure Protein bar", 190, 20],
 ["Almonds (small handful, ~23)", 170, 6], ["Cashews (small handful)", 160, 5], ["Peanuts (small handful)", 160, 7],
 ["Walnuts (small handful)", 185, 4], ["Dry grapes / raisins (small handful)", 85, 1],
 ["Dates (3)", 200, 1], ["Peanut butter (2 tbsp)", 190, 8],
@@ -191,7 +210,9 @@ const DB = [
 ["Veggies, mixed (1 cup)", 50, 2], ["Salad, plain (1 bowl)", 35, 2], ["Sweet potato (1 medium)", 100, 2],
 ["Corn (1 cup)", 130, 5], ["Edamame (1 cup)", 190, 17], ["Broccoli (1 cup)", 55, 4],
 // --- Drinks ---
-["Chai with milk & sugar (1 cup)", 100, 2], ["Filter coffee (1 cup)", 90, 2], ["Black coffee", 5, 0],
+["Chai with milk & sugar (1 cup)", 100, 2], ["Indian tea with milk & sugar (1 cup)", 100, 2],
+["Filter coffee (1 cup)", 90, 2], ["Indian coffee with milk & sugar (1 cup)", 100, 2], ["Black coffee", 5, 0],
+["Badam milk (1 cup)", 200, 6], ["Rose milk (1 cup)", 180, 5],
 ["Coconut water (1 cup)", 46, 2], ["Orange juice (1 cup)", 110, 2], ["Mango lassi (1 cup)", 260, 6],
 ["Soda (12 oz)", 140, 0], ["Beer (12 oz)", 150, 2], ["Wine (5 oz)", 125, 0],
 // --- Supplements ---
@@ -203,6 +224,8 @@ const DEFAULT_FOODS = [
   {id:"f1", name:"Protein smoothie (Orgain 2 scoops, almond milk, berries, banana, chia)", cal:480, protein:27, meal:"Morning"},
   {id:"f2", name:"Kirkland protein bar", cal:190, protein:21, meal:"Morning"},
   {id:"f3", name:"RX Bar", cal:210, protein:12, meal:"Morning"},
+  {id:"f22", name:"Pure Protein bar", cal:190, protein:20, meal:"Morning"},
+  {id:"f23", name:"Avocado blueberry smoothie (Orgain 2 scoops, almond milk)", cal:360, protein:24, meal:"Morning"},
   {id:"f4", name:"Almonds (small handful, ~23)", cal:170, protein:6, meal:"Morning"},
   {id:"f5", name:"Dry grapes / raisins (small handful)", cal:85, protein:1, meal:"Morning"},
   {id:"f6", name:"Apple", cal:95, protein:0, meal:"Morning"},
@@ -241,6 +264,14 @@ const LS = {
 let dateKey = todayKey();
 let foods = LS.get("mdp_foods", null);
 if (!foods) { foods = DEFAULT_FOODS; LS.set("mdp_foods", foods); }
+else {
+  // Merge in any new default staples added in app updates
+  let merged = false;
+  DEFAULT_FOODS.forEach(d => {
+    if (!foods.some(f => f.name === d.name)) { foods.push({...d}); merged = true; }
+  });
+  if (merged) LS.set("mdp_foods", foods);
+}
 let log = LS.get("mdp_log_" + dateKey, []);
 let targets = LS.get("mdp_targets", {cal:2200, protein:132});
 let addingTo = null;
