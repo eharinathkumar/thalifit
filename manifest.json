@@ -1,7 +1,7 @@
 {
-  "name": "My Daily Plate",
-  "short_name": "Daily Plate",
-  "description": "Personal calorie and protein tracker",
+  "name": "ThaliFit",
+  "short_name": "ThaliFit",
+  "description": "Track your thali — calories and protein, the Indian way",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
