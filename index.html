@@ -16,17 +16,19 @@
   --text:#F1EDE2; --muted:#9A9C8B; --faint:#6C7060;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'Public Sans',system-ui,sans-serif;padding-bottom:60px}
-.wrap{max-width:480px;margin:0 auto;padding:20px 16px calc(20px + env(safe-area-inset-bottom))}
+body{background:var(--bg);color:var(--text);font-family:'Public Sans',system-ui,sans-serif;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+.wrap{max-width:480px;margin:0 auto;padding:20px 16px}
 .serif{font-family:'Fraunces',Georgia,serif}
 button{font-family:inherit;cursor:pointer;border:none;border-radius:8px;font-size:13px}
-input{font-family:inherit;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px 12px;font-size:15px;width:100%}
-input:focus{outline:1px solid var(--turmeric)}
+input,select{font-family:inherit;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px 12px;font-size:15px;width:100%}
+input:focus,select:focus{outline:1px solid var(--turmeric)}
 .hdr{display:flex;justify-content:space-between;align-items:baseline}
 .h1{font-family:'Fraunces',Georgia,serif;font-size:26px;font-weight:650}
 .sub{color:var(--muted);font-size:13px;margin-top:2px}
 .chip{font-size:12px;font-weight:500;margin-left:8px;font-family:'Public Sans',sans-serif}
 .btn-ghost{background:none;border:1px solid var(--line);color:var(--muted);padding:5px 10px;font-size:12px}
+.btn-main{background:var(--turmeric);color:#1a1508;padding:11px 16px;font-size:14px;font-weight:600}
+.btn-green{background:var(--leaf);color:#141a0c;padding:11px 16px;font-size:14px;font-weight:600}
 .card{background:var(--card);border-radius:16px;padding:18px 14px 16px;margin-top:16px}
 .rings{display:flex;justify-content:space-around}
 .ring{display:flex;flex-direction:column;align-items:center;gap:4px}
@@ -59,89 +61,167 @@ input:focus{outline:1px solid var(--turmeric)}
 .manual .lbl{font-size:12px;color:var(--muted);margin-bottom:6px}
 .row2{display:flex;gap:8px;margin-top:8px}
 .row2 label{flex:1;font-size:11px;color:var(--muted)}
-.row2 input{margin-top:3px;background:var(--cardsoft);padding:7px 9px;font-size:14px}
+.row2 input,.row2 select{margin-top:3px;background:var(--cardsoft);padding:7px 9px;font-size:14px}
 .confirm{width:100%;margin-top:10px;background:var(--leaf);color:#141a0c;padding:10px 0;font-size:14px;font-weight:600}
-.hist-btn{width:100%;background:var(--card);color:var(--muted);border:1px solid var(--line);padding:11px 0;margin-top:26px}
-.hist{background:var(--card);border-radius:12px;padding:14px;margin-top:26px}
-.hist .row{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line)}
 .foot{text-align:center;font-size:11px;color:var(--faint);margin-top:22px;line-height:1.6}
 .foot button{background:none;color:var(--faint);text-decoration:underline;font-size:11px;padding:0}
-.targets{background:var(--card);border-radius:12px;padding:14px;margin-top:12px;display:flex;gap:12px}
-.targets label{flex:1;font-size:12px;color:var(--muted)}
-.targets input{margin-top:4px}
 .checkline{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin-top:10px}
 .checkline input{width:auto}
-.hide{display:none}
+.hide{display:none!important}
+/* Tabs */
+.tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:50}
+.tabbar button{flex:1;background:none;color:var(--faint);padding:12px 0 10px;font-size:12px;border-radius:0;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabbar button.active{color:var(--turmeric)}
+.tabbar .ico{font-size:19px;line-height:1}
+/* Modals */
+.overlay{position:fixed;inset:0;background:rgba(10,12,7,.82);z-index:100;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--card);border-radius:20px 20px 0 0;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;padding:22px 18px calc(22px + env(safe-area-inset-bottom))}
+.sheet h3{font-family:'Fraunces',Georgia,serif;font-size:21px;font-weight:650;margin-bottom:4px}
+.sheet .sub{margin-bottom:14px}
+.field{margin-top:12px}
+.field label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
+.seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{flex:1;background:none;color:var(--muted);padding:9px 0;font-size:13px;border-radius:0}
+.seg button.on{background:var(--turmeric);color:#1a1508;font-weight:600}
+.statgrid{display:flex;gap:10px;margin-top:12px}
+.stat{flex:1;background:var(--cardsoft);border-radius:12px;padding:12px;text-align:center}
+.stat .v{font-family:'Fraunces',Georgia,serif;font-size:22px;font-weight:650}
+.stat .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+.bars{display:flex;align-items:flex-end;gap:6px;height:110px;margin-top:14px}
+.barcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.bar{width:100%;border-radius:5px 5px 0 0;background:var(--leaf);min-height:3px}
+.bar.hot{background:var(--chili)}
+.barlbl{font-size:9px;color:var(--faint)}
+.tiplist{margin-top:10px}
+.tiplist div{font-size:13px;line-height:1.5;color:var(--text);padding:7px 0;border-bottom:1px solid var(--line)}
+.link{background:none;color:var(--turmeric);text-decoration:underline;padding:0;font-size:12px}
+.weightrow{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="hdr">
     <div>
-      <div class="h1">ThaliFit<span id="saveChip" class="chip"></span></div>
+      <div class="h1" id="pageTitle">ThaliFit<span id="saveChip" class="chip"></span></div>
       <div class="sub" id="dateLabel"></div>
     </div>
-    <button class="btn-ghost" onclick="toggleTargets()">Targets</button>
+    <button class="btn-ghost" id="targetsBtn" onclick="toggleTargets()">Targets</button>
   </div>
 
-  <div id="targetsPanel" class="targets hide">
-    <label>Calories<input type="number" id="tCal" onchange="saveTargets()"></label>
-    <label>Protein (g)<input type="number" id="tPro" onchange="saveTargets()"></label>
-  </div>
+  <!-- ============ TODAY TAB ============ -->
+  <div id="tab-today">
+    <div id="targetsPanel" class="card hide" style="display:flex;gap:12px;padding:14px">
+      <label style="flex:1;font-size:12px;color:var(--muted)">Calories<input type="number" id="tCal" onchange="saveTargets()" style="margin-top:4px"></label>
+      <label style="flex:1;font-size:12px;color:var(--muted)">Protein (g)<input type="number" id="tPro" onchange="saveTargets()" style="margin-top:4px"></label>
+    </div>
 
-  <div class="card">
-    <div class="rings">
-      <div class="ring">
-        <svg width="88" height="88" viewBox="0 0 88 88">
-          <circle cx="44" cy="44" r="34" fill="none" stroke="var(--line)" stroke-width="7"/>
-          <circle id="ringCal" cx="44" cy="44" r="34" fill="none" stroke="var(--turmeric)" stroke-width="7" stroke-linecap="round" transform="rotate(-90 44 44)" style="transition:stroke-dashoffset .5s"/>
-          <text id="ringCalNum" x="44" y="42" text-anchor="middle" fill="var(--text)" font-size="17" font-weight="600" font-family="Fraunces,Georgia,serif">0</text>
-          <text id="ringCalMax" x="44" y="56" text-anchor="middle" fill="var(--faint)" font-size="9"></text>
-        </svg>
-        <div class="lbl">Calories</div><div class="sub2" id="calSub"></div>
+    <div class="card">
+      <div class="rings">
+        <div class="ring">
+          <svg width="88" height="88" viewBox="0 0 88 88">
+            <circle cx="44" cy="44" r="34" fill="none" stroke="var(--line)" stroke-width="7"/>
+            <circle id="ringCal" cx="44" cy="44" r="34" fill="none" stroke="var(--turmeric)" stroke-width="7" stroke-linecap="round" transform="rotate(-90 44 44)" style="transition:stroke-dashoffset .5s"/>
+            <text id="ringCalNum" x="44" y="42" text-anchor="middle" fill="var(--text)" font-size="17" font-weight="600" font-family="Fraunces,Georgia,serif">0</text>
+            <text id="ringCalMax" x="44" y="56" text-anchor="middle" fill="var(--faint)" font-size="9"></text>
+          </svg>
+          <div class="lbl">Calories</div><div class="sub2" id="calSub"></div>
+        </div>
+        <div class="ring">
+          <svg width="88" height="88" viewBox="0 0 88 88">
+            <circle cx="44" cy="44" r="34" fill="none" stroke="var(--line)" stroke-width="7"/>
+            <circle id="ringPro" cx="44" cy="44" r="34" fill="none" stroke="var(--leaf)" stroke-width="7" stroke-linecap="round" transform="rotate(-90 44 44)" style="transition:stroke-dashoffset .5s"/>
+            <text id="ringProNum" x="44" y="42" text-anchor="middle" fill="var(--text)" font-size="17" font-weight="600" font-family="Fraunces,Georgia,serif">0</text>
+            <text id="ringProMax" x="44" y="56" text-anchor="middle" fill="var(--faint)" font-size="9"></text>
+          </svg>
+          <div class="lbl">Protein g</div><div class="sub2" id="proSub"></div>
+        </div>
       </div>
-      <div class="ring">
-        <svg width="88" height="88" viewBox="0 0 88 88">
-          <circle cx="44" cy="44" r="34" fill="none" stroke="var(--line)" stroke-width="7"/>
-          <circle id="ringPro" cx="44" cy="44" r="34" fill="none" stroke="var(--leaf)" stroke-width="7" stroke-linecap="round" transform="rotate(-90 44 44)" style="transition:stroke-dashoffset .5s"/>
-          <text id="ringProNum" x="44" y="42" text-anchor="middle" fill="var(--text)" font-size="17" font-weight="600" font-family="Fraunces,Georgia,serif">0</text>
-          <text id="ringProMax" x="44" y="56" text-anchor="middle" fill="var(--faint)" font-size="9"></text>
-        </svg>
-        <div class="lbl">Protein g</div><div class="sub2" id="proSub"></div>
+      <div id="mealBarWrap"></div>
+      <div id="macroPie"></div>
+    </div>
+
+    <div id="meals"></div>
+
+    <div id="aiBox" class="hide" style="background:var(--cardsoft);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:20px">
+      <div style="font-size:12px;color:var(--turmeric);font-weight:600;letter-spacing:.05em;margin-bottom:4px">✨ AI QUICK LOG</div>
+      <div style="font-size:11px;color:var(--faint);margin-bottom:8px">Couldn't find it in search? Describe your whole meal and let AI figure it out.</div>
+      <div style="display:flex;gap:8px">
+        <input id="aiInput" placeholder='Try: "2 dosas with podi and a filter coffee"' autocomplete="off">
+        <button id="micBtn" class="hide" onclick="startVoice()" style="background:var(--card);color:var(--text);padding:0 13px;font-size:16px;border:1px solid var(--line)">🎤</button>
+        <button id="aiGo" onclick="aiParse()" style="background:var(--turmeric);color:#1a1508;padding:0 14px;font-weight:600">Log</button>
+      </div>
+      <div id="aiStatus" style="font-size:12px;color:var(--faint);margin-top:6px"></div>
+      <div id="aiResults"></div>
+    </div>
+
+    <div class="foot">
+      Estimates only — tweak any number before adding.<br>
+      <button onclick="exportData()">Backup my data</button> · <button onclick="document.getElementById('importFile').click()">Restore backup</button>
+      <input type="file" id="importFile" class="hide" accept=".json" onchange="importData(event)">
+    </div>
+  </div>
+
+  <!-- ============ TRENDS TAB ============ -->
+  <div id="tab-trends" class="hide">
+    <div class="card">
+      <div class="serif" style="font-size:18px">This week</div>
+      <div class="statgrid">
+        <div class="stat"><div class="v" id="stAvgCal">–</div><div class="k">Avg cal/day</div></div>
+        <div class="stat"><div class="v" id="stAvgPro">–</div><div class="k">Avg protein</div></div>
+        <div class="stat"><div class="v" id="stHot">–</div><div class="k">High days</div></div>
+      </div>
+      <div class="bars" id="weekBars"></div>
+      <div style="display:flex;gap:14px;margin-top:8px">
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span class="dot" style="background:var(--leaf)"></span>On track</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span class="dot" style="background:var(--chili)"></span>High day (20%+ over target)</div>
       </div>
     </div>
-    <div id="mealBarWrap"></div>
+    <div class="card" id="hotDaysCard"></div>
+    <div class="card" id="monthCard"></div>
   </div>
 
-  <div id="aiBox" class="hide" style="background:var(--cardsoft);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:14px">
-    <div style="font-size:12px;color:var(--turmeric);font-weight:600;letter-spacing:.05em;margin-bottom:8px">✨ AI QUICK LOG</div>
-    <div style="display:flex;gap:8px">
-      <input id="aiInput" placeholder='Try: "2 dosas with podi and a filter coffee"' autocomplete="off">
-      <button id="micBtn" class="hide" onclick="startVoice()" style="background:var(--card);color:var(--text);padding:0 13px;font-size:16px;border:1px solid var(--line)">🎤</button>
-      <button id="aiGo" onclick="aiParse()" style="background:var(--turmeric);color:#1a1508;padding:0 14px;font-weight:600">Log</button>
+  <!-- ============ PROFILE TAB ============ -->
+  <div id="tab-profile" class="hide">
+    <div id="profileContent"></div>
+  </div>
+</div>
+
+<!-- Bottom tab bar -->
+<div class="tabbar">
+  <button id="tabbtn-today" class="active" onclick="showTab('today')"><span class="ico">🍽️</span>Today</button>
+  <button id="tabbtn-trends" onclick="showTab('trends')"><span class="ico">📊</span>Trends</button>
+  <button id="tabbtn-profile" onclick="showTab('profile')"><span class="ico">👤</span>Profile</button>
+</div>
+
+<!-- Onboarding / edit profile sheet -->
+<div id="onboard" class="overlay hide"><div class="sheet" id="onboardSheet"></div></div>
+<!-- BMI info sheet -->
+<div id="bmiModal" class="overlay hide" onclick="if(event.target===this)this.classList.add('hide')">
+  <div class="sheet">
+    <h3>Understanding your BMI</h3>
+    <div class="sub">Body Mass Index = weight (kg) ÷ height (m)²</div>
+    <div class="tiplist">
+      <div><b>Under 18.5</b> — underweight</div>
+      <div><b>18.5 – 24.9</b> — healthy range</div>
+      <div><b>25 – 29.9</b> — overweight</div>
+      <div><b>30+</b> — obese range</div>
     </div>
-    <div id="aiStatus" style="font-size:12px;color:var(--faint);margin-top:6px"></div>
-    <div id="aiResults"></div>
-  </div>
-
-  <div id="meals"></div>
-
-  <div id="histWrap"><button class="hist-btn" onclick="loadHistory()">Show last 7 days</button></div>
-
-  <div class="foot">
-    Estimates only — tweak any number before adding.<br>
-    <button onclick="exportData()">Backup my data</button> · <button onclick="document.getElementById('importFile').click()">Restore backup</button>
-    <input type="file" id="importFile" class="hide" accept=".json" onchange="importData(event)">
+    <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:14px">
+      <b style="color:var(--text)">To measure it properly:</b><br>
+      • Weigh yourself in the morning, after the bathroom, before eating, in light clothing.<br>
+      • Use the same scale, on a hard floor, at the same time of day each week.<br>
+      • Measure height without shoes, standing straight against a wall.<br><br>
+      <b style="color:var(--text)">Keep in mind:</b> BMI is a rough screening number. It can read "high" for muscular people and miss other health factors. Use the weekly weight trend here — not any single day — as your real signal, and talk to your doctor about what a healthy range means for you.
+    </div>
+    <button class="btn-main" style="width:100%;margin-top:16px" onclick="document.getElementById('bmiModal').classList.add('hide')">Got it</button>
   </div>
 </div>
 
 <script>
-// ================= AI meal logging =================
-// Paste your Cloudflare Worker URL between the quotes after deploying it.
-// Leave empty ("") to hide the AI box entirely.
+// ================= AI endpoint =================
+// Paste your Cloudflare Worker URL between the quotes (must start with https://)
 const AI_ENDPOINT = "https://thalifit-ai.harinathkumar.workers.dev";
-// ================= Food database =================
-// [name, calories, protein g] per typical serving
+
 const DB = [
 // ============ HIS STAPLES ============
 ["Protein smoothie (Orgain 2 scoops, almond milk, berries, banana, chia)", 480, 27],
@@ -412,7 +492,6 @@ const DB = [
 ["Creatine 5g", 0, 0], ["Chia seeds (1 tbsp)", 60, 2], ["Flax seeds (1 tbsp)", 55, 2],
 ];
 
-// His usual foods, pre-pinned to meals
 const DEFAULT_FOODS = [
   {id:"f1", name:"Protein smoothie (Orgain 2 scoops, almond milk, berries, banana, chia)", cal:480, protein:27, meal:"Morning"},
   {id:"f2", name:"Kirkland protein bar", cal:190, protein:21, meal:"Morning"},
@@ -448,45 +527,339 @@ const todayKey = () => {
   const d = new Date();
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
 };
+const dayKeyOf = (d) => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
 const uid = () => Math.random().toString(36).slice(2,10);
 const LS = {
   get(k, fb){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } },
   set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } }
 };
 
+// Estimate carbs/fat from calories+protein using food-type heuristics.
+// (DB stores cal+protein; AI-logged and manual foods can carry real values.)
+function estimateMacros(name, cal, protein){
+  const rem = Math.max(0, cal - protein*4);
+  const n = String(name).toLowerCase();
+  let fatShare = 0.30;
+  if (/almond|cashew|peanut|walnut|nuts|avocado|ghee|butter(?!milk| naan)|cheese slice|peanut butter|chia|flax|olive oil|mayo/.test(n)) fatShare = 0.78;
+  else if (/fry|fried|vada|pakora|samosa|bonda|chips|murukku|mixture|cream|alfredo|shake|ice cream|kofta|bhatura|poori|parotta|paratha|burger|pizza|fries|onion ring|halwa|mysore pak|laddu|barfi|katli|cannoli|tiramisu|guac|queso|egg|omelette|mutton|chettinad|sukka|chukka|65|lollipop|tikka|donut|cookie|chocolate|frosty|mcflurry|paneer/.test(n)) fatShare = 0.55;
+  else if (/rice(?!.*fried)|idli|fruit|apple|banana|orange|mango|grape|juice|bread|toast|cereal|oat|poha|upma|jalebi|rasgulla|kheer|payasam|soda|sugarcane|dates|raisin|kesari|pongal|horchata|watermelon|pineapple|papaya|honey/.test(n)) fatShare = 0.15;
+  else if (/dal|sambar|rasam|curry|kuzhambu|chole|rajma|chana|salad|soup|yogurt|milk|lassi|smoothie|chicken(?!.*fried)|fish|prawn|tandoori/.test(n)) fatShare = 0.35;
+  const fat = Math.round((rem*fatShare)/9);
+  const carbs = Math.max(0, Math.round((rem - fat*9)/4));
+  return {carbs, fat};
+}
+
 let dateKey = todayKey();
 let foods = LS.get("mdp_foods", null);
 if (!foods) { foods = DEFAULT_FOODS; LS.set("mdp_foods", foods); }
 else {
-  // Merge in any new default staples added in app updates
   let merged = false;
-  DEFAULT_FOODS.forEach(d => {
-    if (!foods.some(f => f.name === d.name)) { foods.push({...d}); merged = true; }
-  });
+  DEFAULT_FOODS.forEach(d => { if (!foods.some(f => f.name === d.name)) { foods.push({...d}); merged = true; } });
   if (merged) LS.set("mdp_foods", foods);
 }
 let log = LS.get("mdp_log_" + dateKey, []);
+// Migrate older entries: add serving qty and macro estimates
+log = log.map(e => ({...e, qty: e.qty || 1, ...(e.carbs != null ? {} : estimateMacros(e.name, e.cal, e.protein))}));
 let targets = LS.get("mdp_targets", {cal:2200, protein:132});
+let profile = LS.get("mdp_profile", null);
+let weights = LS.get("mdp_weights", []);
 let addingTo = null;
+let currentTab = "today";
 
-// ================= Rendering =================
+// ================= Tabs =================
+function showTab(name){
+  currentTab = name;
+  ["today","trends","profile"].forEach(t => {
+    document.getElementById("tab-"+t).classList.toggle("hide", t!==name);
+    document.getElementById("tabbtn-"+t).classList.toggle("active", t===name);
+  });
+  document.getElementById("targetsBtn").classList.toggle("hide", name!=="today");
+  document.getElementById("dateLabel").textContent = name==="today"
+    ? new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})
+    : (name==="trends" ? "Your patterns, week by week" : "Your body, your goals");
+  if (name==="trends") renderTrends();
+  if (name==="profile") renderProfile();
+}
+
+// ================= Units helpers =================
+const kgToLb = kg => kg*2.20462;
+const lbToKg = lb => lb/2.20462;
+const cmToFtIn = cm => { const ti = cm/2.54; return {ft: Math.floor(ti/12), inch: Math.round(ti%12)}; };
+const ftInToCm = (ft,inch) => (ft*12+ (inch||0))*2.54;
+const fmtW = kg => !profile || profile.units==="metric" ? Math.round(kg*10)/10 + " kg" : Math.round(kgToLb(kg)*10)/10 + " lb";
+
+// ================= BMI & local plan fallback =================
+function calcBMI(kg, cm){ const m = cm/100; return Math.round((kg/(m*m))*10)/10; }
+function bmiCategory(b){ return b<18.5?"Underweight":b<25?"Healthy range":b<30?"Overweight":"Obese range"; }
+function localPlan(p){
+  // Mifflin-St Jeor
+  const s = p.sex==="male" ? 5 : p.sex==="female" ? -161 : -78;
+  const bmr = 10*p.weightKg + 6.25*p.heightCm - 5*p.age + s;
+  const mult = {sedentary:1.2, light:1.375, moderate:1.55, very:1.725}[p.activity] || 1.375;
+  let tdee = bmr*mult;
+  if (p.steps >= 10000 && (p.activity==="sedentary"||p.activity==="light")) tdee *= 1.05;
+  let cal = Math.round(tdee/10)*10;
+  if (p.goal==="lose") cal = Math.max(Math.round((tdee-450)/10)*10, 1400);
+  if (p.goal==="build") cal = Math.round((tdee+250)/10)*10;
+  const proPerKg = p.goal==="build" ? 1.8 : p.goal==="lose" ? 1.6 : 1.2;
+  const protein = Math.round(p.weightKg * proPerKg);
+  const plan = {daily_calories: cal, protein_g: protein,
+    summary: "Targets estimated with the Mifflin-St Jeor formula based on your stats and activity.",
+    suggestions: [
+      p.goal==="lose" ? "A moderate ~450 calorie daily deficit aims for about 0.4 kg (1 lb) per week — sustainable beats fast." :
+      p.goal==="build" ? "A small surplus plus " + protein + "g protein daily supports muscle without excess fat gain." :
+      "Consistency at maintenance keeps energy steady — protein at each meal helps.",
+      "Spread protein across all three meals rather than loading one.",
+      "Weigh in weekly, same day and time, and judge by the trend, not single days."
+    ]};
+  return plan;
+}
+
+// ================= Onboarding =================
+let ob = {units:"metric", sex:"", activity:"light", goal:"maintain"};
+function openOnboarding(existing){
+  if (existing) ob = {units:existing.units, sex:existing.sex, activity:existing.activity, goal:existing.goal,
+    age:existing.age, weightKg:existing.weightKg, heightCm:existing.heightCm, steps:existing.steps};
+  else ob = {units:"metric", sex:"", activity:"light", goal:"maintain"};
+  renderOnboard(existing);
+  document.getElementById("onboard").classList.remove("hide");
+}
+function obSet(k,v){ ob[k]=v; renderOnboard(true); }
+function renderOnboard(keepVals){
+  const metric = ob.units==="metric";
+  const w = ob.weightKg ? (metric ? Math.round(ob.weightKg*10)/10 : Math.round(kgToLb(ob.weightKg)*10)/10) : "";
+  const hcm = ob.heightCm || "";
+  const fi = ob.heightCm ? cmToFtIn(ob.heightCm) : {ft:"",inch:""};
+  document.getElementById("onboardSheet").innerHTML = `
+    <h3>${profile? "Update your profile" : "Welcome to ThaliFit!"}</h3>
+    <div class="sub">A few details so we can set the right daily targets for you. Stored only on this phone.</div>
+    <div class="field"><label>Units</label>
+      <div class="seg">
+        <button class="${metric?'on':''}" onclick="obReadFields();obSet('units','metric')">Metric (kg, cm)</button>
+        <button class="${!metric?'on':''}" onclick="obReadFields();obSet('units','imperial')">US (lb, ft/in)</button>
+      </div></div>
+    <div class="row2">
+      <label>Age<input type="number" id="obAge" inputmode="numeric" value="${ob.age||""}"></label>
+      <label>Sex (for calorie math)<select id="obSex">
+        <option value="" ${!ob.sex?"selected":""}>Prefer not to say</option>
+        <option value="male" ${ob.sex==="male"?"selected":""}>Male</option>
+        <option value="female" ${ob.sex==="female"?"selected":""}>Female</option>
+      </select></label>
+    </div>
+    <div class="row2">
+      <label>Weight (${metric?"kg":"lb"})<input type="number" id="obWeight" inputmode="decimal" value="${w}"></label>
+      ${metric
+        ? `<label>Height (cm)<input type="number" id="obHcm" inputmode="numeric" value="${hcm ? Math.round(hcm) : ""}"></label>`
+        : `<label>Height<div style="display:flex;gap:6px;margin-top:3px">
+             <input type="number" id="obHft" inputmode="numeric" placeholder="ft" value="${fi.ft}" style="background:var(--cardsoft);padding:7px 9px;font-size:14px">
+             <input type="number" id="obHin" inputmode="numeric" placeholder="in" value="${fi.inch}" style="background:var(--cardsoft);padding:7px 9px;font-size:14px">
+           </div></label>`}
+    </div>
+    <div class="field"><label>How active are you (outside workouts)?</label>
+      <select id="obActivity">
+        <option value="sedentary" ${ob.activity==="sedentary"?"selected":""}>Mostly sitting (desk job)</option>
+        <option value="light" ${ob.activity==="light"?"selected":""}>Lightly active (some walking)</option>
+        <option value="moderate" ${ob.activity==="moderate"?"selected":""}>Active (on my feet a lot / exercise 3-5x wk)</option>
+        <option value="very" ${ob.activity==="very"?"selected":""}>Very active (hard exercise most days)</option>
+      </select></div>
+    <div class="row2">
+      <label>Average daily steps<input type="number" id="obSteps" inputmode="numeric" placeholder="e.g. 8000" value="${ob.steps||""}"></label>
+      <label>My goal<select id="obGoal">
+        <option value="lose" ${ob.goal==="lose"?"selected":""}>Lose weight</option>
+        <option value="maintain" ${ob.goal==="maintain"?"selected":""}>Maintain</option>
+        <option value="build" ${ob.goal==="build"?"selected":""}>Build muscle</option>
+      </select></label>
+    </div>
+    <button class="btn-main" style="width:100%;margin-top:18px" onclick="finishOnboarding()">${AI_ENDPOINT ? "✨ Get my AI plan" : "Set my targets"}</button>
+    <div id="obStatus" style="font-size:12px;color:var(--faint);text-align:center;margin-top:8px"></div>
+    ${profile ? "" : '<button class="link" style="display:block;margin:12px auto 0" onclick="document.getElementById(\'onboard\').classList.add(\'hide\')">Skip for now</button>'}
+  `;
+}
+function obReadFields(){
+  const g = id => document.getElementById(id);
+  if (!g("obAge")) return;
+  ob.age = Number(g("obAge").value)||undefined;
+  ob.sex = g("obSex").value;
+  ob.activity = g("obActivity").value;
+  ob.goal = g("obGoal").value;
+  ob.steps = Number(g("obSteps").value)||0;
+  const wv = Number(g("obWeight").value)||undefined;
+  ob.weightKg = wv ? (ob.units==="metric" ? wv : lbToKg(wv)) : undefined;
+  if (ob.units==="metric") ob.heightCm = Number(g("obHcm")?.value)||undefined;
+  else {
+    const ft = Number(g("obHft")?.value)||0, inch = Number(g("obHin")?.value)||0;
+    ob.heightCm = (ft||inch) ? ftInToCm(ft,inch) : undefined;
+  }
+}
+async function finishOnboarding(){
+  obReadFields();
+  const st = document.getElementById("obStatus");
+  if (!ob.age || !ob.weightKg || !ob.heightCm){ st.textContent = "Please fill in age, weight, and height."; return; }
+  st.textContent = AI_ENDPOINT ? "Asking AI to build your plan…" : "Calculating…";
+  const p = {units:ob.units, age:ob.age, sex:ob.sex, weightKg:Math.round(ob.weightKg*10)/10,
+    heightCm:Math.round(ob.heightCm), activity:ob.activity, steps:ob.steps, goal:ob.goal, created:profile?.created || Date.now()};
+  let plan = null;
+  if (AI_ENDPOINT){
+    try {
+      const r = await fetch(AI_ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({type:"plan", profile:{age:p.age, sex:p.sex||"unspecified", weight_kg:p.weightKg, height_cm:p.heightCm,
+          bmi: calcBMI(p.weightKg,p.heightCm), activity:p.activity, avg_daily_steps:p.steps, goal:p.goal}})});
+      const data = await r.json();
+      if (r.ok && data.plan) plan = data.plan;
+    } catch(e){ /* fall through to local */ }
+  }
+  if (!plan){ plan = localPlan(p); if (AI_ENDPOINT) plan.summary += " (AI was unreachable, so this used the standard formula — you can re-run from your profile.)"; }
+  p.plan = plan;
+  profile = p;
+  LS.set("mdp_profile", profile);
+  targets = {cal: plan.daily_calories, protein: plan.protein_g};
+  LS.set("mdp_targets", targets);
+  // first weight entry
+  if (!weights.length || weights[weights.length-1].date !== dateKey){
+    weights.push({date: dateKey, kg: p.weightKg});
+    LS.set("mdp_weights", weights);
+  }
+  document.getElementById("onboard").classList.add("hide");
+  renderTotals();
+  showTab("profile");
+}
+
+// ================= Profile tab =================
+function renderProfile(){
+  const el = document.getElementById("profileContent");
+  if (!profile){
+    el.innerHTML = `<div class="card" style="text-align:center;padding:28px 16px">
+      <div class="serif" style="font-size:19px">Set up your profile</div>
+      <div style="font-size:13px;color:var(--muted);margin:8px 0 16px;line-height:1.5">Tell ThaliFit about yourself and get personalized daily calorie and protein targets${AI_ENDPOINT?" — built by AI":""}.</div>
+      <button class="btn-main" onclick="openOnboarding()">Get started</button></div>`;
+    return;
+  }
+  const bmi = calcBMI(profile.weightKg, profile.heightCm);
+  const latest = weights.length ? weights[weights.length-1] : null;
+  const first = weights.length ? weights[0] : null;
+  const delta = (latest && first && weights.length>1) ? Math.round((latest.kg-first.kg)*10)/10 : null;
+  const plan = profile.plan || {};
+  el.innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="serif" style="font-size:18px">Your profile</div>
+        <button class="btn-ghost" onclick="openOnboarding(profile)">Edit</button>
+      </div>
+      <div class="statgrid">
+        <div class="stat"><div class="v">${bmi}</div><div class="k">BMI</div></div>
+        <div class="stat"><div class="v" style="font-size:16px;padding-top:5px">${bmiCategory(bmi)}</div><div class="k">Category</div></div>
+        <div class="stat"><div class="v">${fmtW(profile.weightKg).split(" ")[0]}</div><div class="k">${profile.units==="metric"?"kg":"lb"}</div></div>
+      </div>
+      <button class="link" style="margin-top:10px" onclick="document.getElementById('bmiModal').classList.remove('hide')">What does my BMI mean & how to measure it right →</button>
+    </div>
+
+    <div class="card">
+      <div class="serif" style="font-size:18px">Your ${AI_ENDPOINT&&plan.summary&&!plan.summary.includes("formula")?"AI ":""}plan</div>
+      <div class="statgrid">
+        <div class="stat"><div class="v">${targets.cal}</div><div class="k">Cal target</div></div>
+        <div class="stat"><div class="v">${targets.protein}g</div><div class="k">Protein target</div></div>
+      </div>
+      ${plan.summary?`<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5">${esc(plan.summary)}</div>`:""}
+      ${(plan.suggestions||[]).length?`<div class="tiplist">${plan.suggestions.map(s=>`<div>💡 ${esc(s)}</div>`).join("")}</div>`:""}
+      ${(plan.weight_loss_plan||[]).length?`<div style="font-size:13px;font-weight:600;margin-top:12px;color:var(--turmeric)">Your easy path:</div><div class="tiplist">${plan.weight_loss_plan.map(s=>`<div>✅ ${esc(s)}</div>`).join("")}</div>`:""}
+      ${AI_ENDPOINT?`<button class="btn-ghost" style="margin-top:12px" onclick="openOnboarding(profile)">Re-run AI plan</button>`:""}
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="serif" style="font-size:18px">Weight tracker</div>
+        <button class="addbtn" onclick="logWeightPrompt()">+ Log weight</button>
+      </div>
+      ${delta!==null?`<div style="font-size:13px;color:${delta<=0?"var(--leaf)":"var(--muted)"};margin-top:8px">${delta>0?"+":""}${profile.units==="metric"?delta+" kg":Math.round(kgToLb(delta)*10)/10+" lb"} since you started</div>`:""}
+      <div style="margin-top:8px">
+        ${weights.slice(-8).reverse().map(w=>`<div class="weightrow"><span style="color:var(--muted)">${w.date}</span><span>${fmtW(w.kg)}</span></div>`).join("") || '<div class="empty">No entries yet — log your first weigh-in.</div>'}
+      </div>
+    </div>`;
+}
+function logWeightPrompt(){
+  const unit = profile.units==="metric" ? "kg" : "lb";
+  const v = prompt("Today's weight (" + unit + "):");
+  if (!v) return;
+  const num = Number(v);
+  if (!num || num<=0) return;
+  const kg = profile.units==="metric" ? num : lbToKg(num);
+  weights = weights.filter(w=>w.date!==dateKey);
+  weights.push({date:dateKey, kg: Math.round(kg*10)/10});
+  weights.sort((a,b)=>a.date<b.date?-1:1);
+  LS.set("mdp_weights", weights);
+  profile.weightKg = Math.round(kg*10)/10;
+  LS.set("mdp_profile", profile);
+  renderProfile();
+}
+
+// ================= Trends tab =================
+function dayTotals(k){
+  const entries = LS.get("mdp_log_"+k, null);
+  if (!entries) return null;
+  return {cal: entries.reduce((s,e)=>s+(e.cal||0)*(e.qty||1),0), protein: entries.reduce((s,e)=>s+(e.protein||0)*(e.qty||1),0)};
+}
+function renderTrends(){
+  const days = [];
+  for (let i=6;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const k = dayKeyOf(d);
+    const t = dayTotals(k);
+    days.push({key:k, label:d.toLocaleDateString(undefined,{weekday:"short"}), cal:t?t.cal:0, protein:t?t.protein:0, logged:!!t});
+  }
+  const logged = days.filter(d=>d.logged && d.cal>0);
+  const avgCal = logged.length ? Math.round(logged.reduce((s,d)=>s+d.cal,0)/logged.length) : 0;
+  const avgPro = logged.length ? Math.round(logged.reduce((s,d)=>s+d.protein,0)/logged.length) : 0;
+  const hotThreshold = targets.cal*1.2;
+  const hot = logged.filter(d=>d.cal>=hotThreshold);
+  document.getElementById("stAvgCal").textContent = avgCal || "–";
+  document.getElementById("stAvgPro").textContent = avgPro ? avgPro+"g" : "–";
+  document.getElementById("stHot").textContent = logged.length ? hot.length : "–";
+  const maxCal = Math.max(...days.map(d=>d.cal), targets.cal);
+  document.getElementById("weekBars").innerHTML = days.map(d=>`
+    <div class="barcol">
+      <div style="font-size:9px;color:var(--faint)">${d.cal||""}</div>
+      <div class="bar ${d.cal>=hotThreshold?"hot":""}" style="height:${d.cal?Math.max(4,(d.cal/maxCal)*100):3}%"></div>
+      <div class="barlbl">${d.label}</div>
+    </div>`).join("");
+  document.getElementById("hotDaysCard").innerHTML = hot.length
+    ? `<div class="serif" style="font-size:18px">🔥 High-calorie days this week</div>
+       <div style="font-size:12px;color:var(--muted);margin-top:4px">Days 20%+ over your ${targets.cal} target. One cheat day won't undo a good week — patterns matter, not single days.</div>
+       ${hot.map(d=>`<div class="weightrow"><span style="color:var(--muted)">${d.key}</span><span style="color:var(--chili)">${d.cal} cal (+${d.cal-targets.cal})</span></div>`).join("")}`
+    : `<div class="serif" style="font-size:18px">🔥 High-calorie days</div><div class="empty" style="margin-top:6px">${logged.length ? "None this week — steady as she goes!" : "Log a few days and your patterns will show up here."}</div>`;
+  // 30-day view
+  let sum=0, n=0, hot30=0;
+  for (let i=0;i<30;i++){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const t = dayTotals(dayKeyOf(d));
+    if (t && t.cal>0){ sum+=t.cal; n++; if (t.cal>=hotThreshold) hot30++; }
+  }
+  document.getElementById("monthCard").innerHTML = `<div class="serif" style="font-size:18px">Last 30 days</div>
+    <div class="statgrid">
+      <div class="stat"><div class="v">${n?Math.round(sum/n):"–"}</div><div class="k">Avg cal/day</div></div>
+      <div class="stat"><div class="v">${n}</div><div class="k">Days logged</div></div>
+      <div class="stat"><div class="v">${n?hot30:"–"}</div><div class="k">High days</div></div>
+    </div>`;
+}
+
+// ================= Today tab (rendering) =================
 function flashSave(ok){
   const chip = document.getElementById("saveChip");
   chip.textContent = ok ? "Saved ✓" : "Not saved";
   chip.style.color = ok ? "var(--leaf)" : "var(--chili)";
   if (ok) setTimeout(() => { chip.textContent = ""; }, 2000);
 }
-
 function persistLog(){
   const ok = LS.set("mdp_log_" + dateKey, log);
   flashSave(ok);
   renderTotals();
   renderMeals();
 }
-
 function renderTotals(){
-  const cal = log.reduce((s,e)=>s+e.cal,0);
-  const pro = log.reduce((s,e)=>s+e.protein,0);
+  const q = e => e.qty || 1;
+  const cal = log.reduce((s,e)=>s+e.cal*q(e),0);
+  const pro = log.reduce((s,e)=>s+e.protein*q(e),0);
+  const carb = log.reduce((s,e)=>s+(e.carbs||0)*q(e),0);
+  const fat = log.reduce((s,e)=>s+(e.fat||0)*q(e),0);
   const setRing = (id, numId, maxId, val, max) => {
     const pct = Math.min(1, max>0 ? val/max : 0);
     const el = document.getElementById(id);
@@ -497,22 +870,35 @@ function renderTotals(){
   };
   setRing("ringCal","ringCalNum","ringCalMax",cal,targets.cal);
   setRing("ringPro","ringProNum","ringProMax",pro,targets.protein);
-  document.getElementById("calSub").textContent = cal > targets.cal ? (cal-targets.cal)+" over" : (targets.cal-cal)+" left";
-  document.getElementById("proSub").textContent = pro >= targets.protein ? "target hit" : (targets.protein-pro)+"g to go";
-  // meal bar
-  const totals = MEALS.map(m => ({m, cal: log.filter(e=>e.meal===m).reduce((s,e)=>s+e.cal,0)})).filter(t=>t.cal>0);
+  document.getElementById("calSub").textContent = cal > targets.cal ? Math.round(cal-targets.cal)+" over" : Math.round(targets.cal-cal)+" left";
+  document.getElementById("proSub").textContent = pro >= targets.protein ? "target hit" : Math.round(targets.protein-pro)+"g to go";
+  const totals = MEALS.map(m => ({m, cal: log.filter(e=>e.meal===m).reduce((s,e)=>s+e.cal*q(e),0)})).filter(t=>t.cal>0);
   const total = totals.reduce((s,t)=>s+t.cal,0);
   const denom = Math.max(targets.cal, total);
   const wrap = document.getElementById("mealBarWrap");
-  if (!total) { wrap.innerHTML=""; return; }
-  wrap.innerHTML = '<div class="mealbar">' +
+  wrap.innerHTML = !total ? "" : '<div class="mealbar">' +
     totals.map(t=>`<div style="width:${(t.cal/denom*100).toFixed(1)}%;background:${MEAL_COLORS[t.m]}"></div>`).join("") +
     '</div><div class="legend">' +
-    totals.map(t=>`<div><span class="dot" style="background:${MEAL_COLORS[t.m]}"></span>${t.m} ${t.cal}</div>`).join("") + '</div>';
+    totals.map(t=>`<div><span class="dot" style="background:${MEAL_COLORS[t.m]}"></span>${t.m} ${Math.round(t.cal)}</div>`).join("") + '</div>';
+  // Macro pie (calories from protein / carbs / fat)
+  const pie = document.getElementById("macroPie");
+  const pc = pro*4, cc = carb*4, fc = fat*9, mt = pc+cc+fc;
+  if (!mt) { pie.innerHTML = ""; return; }
+  const pPct = pc/mt*100, cPct = cc/mt*100, fPct = fc/mt*100;
+  pie.innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
+      <div style="width:92px;height:92px;border-radius:50%;flex-shrink:0;background:conic-gradient(var(--leaf) 0 ${pPct.toFixed(1)}%, var(--turmeric) ${pPct.toFixed(1)}% ${(pPct+cPct).toFixed(1)}%, var(--chili) ${(pPct+cPct).toFixed(1)}% 100%);display:flex;align-items:center;justify-content:center">
+        <div style="width:52px;height:52px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--muted);text-align:center;line-height:1.3">MACRO<br>SPLIT</div>
+      </div>
+      <div style="flex:1;font-size:12px">
+        <div style="display:flex;justify-content:space-between;padding:4px 0"><span><span class="dot" style="background:var(--leaf)"></span> Protein</span><span style="color:var(--muted)">${Math.round(pro)}g · ${Math.round(pPct)}%</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0"><span><span class="dot" style="background:var(--turmeric)"></span> Carbs</span><span style="color:var(--muted)">${Math.round(carb)}g · ${Math.round(cPct)}%</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0"><span><span class="dot" style="background:var(--chili)"></span> Fat</span><span style="color:var(--muted)">${Math.round(fat)}g · ${Math.round(fPct)}%</span></div>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--faint);margin-top:6px">Carbs & fat are estimates for database foods; AI-logged items use real values.</div>`;
 }
-
-function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
-
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function renderMeals(){
   const root = document.getElementById("meals");
   root.innerHTML = MEALS.map(meal => {
@@ -529,10 +915,16 @@ function renderMeals(){
         <button class="addbtn ${open?'open':''}" onclick="toggleAdd('${meal}')">${open ? "Close" : "+ Add"}</button>
       </div>
       ${!entries.length && !open ? '<div class="empty">Nothing logged yet.</div>' : ""}
-      ${entries.map(e=>`<div class="entry">
-        <div style="flex:1;min-width:0"><div class="nm">${esc(e.name)}</div><div class="meta">${e.cal} cal · ${e.protein}g protein</div></div>
+      ${entries.map(e=>{const eq=e.qty||1;return `<div class="entry">
+        <div style="flex:1;min-width:0"><div class="nm">${esc(e.name)}</div>
+        <div class="meta">${Math.round(e.cal*eq)} cal · ${Math.round(e.protein*eq)}g P · ${Math.round((e.carbs||0)*eq)}g C · ${Math.round((e.fat||0)*eq)}g F</div></div>
+        <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
+          <button onclick="chgQty('${e.id}',-0.5)" style="background:var(--cardsoft);color:var(--muted);width:26px;height:26px;padding:0;font-size:15px;border-radius:6px">−</button>
+          <span style="font-size:11px;color:var(--muted);min-width:30px;text-align:center">${eq}×</span>
+          <button onclick="chgQty('${e.id}',0.5)" style="background:var(--cardsoft);color:var(--muted);width:26px;height:26px;padding:0;font-size:15px;border-radius:6px">+</button>
+        </div>
         <button class="x" onclick="removeEntry('${e.id}')" aria-label="Remove">✕</button>
-      </div>`).join("")}
+      </div>`}).join("")}
       ${open ? addPanel(meal) : ""}
     </div>`;
   }).join("");
@@ -542,10 +934,9 @@ function renderMeals(){
     renderResults(addingTo);
   }
 }
-
 function addPanel(meal){
   return `<div class="panel">
-    <input id="searchInput" placeholder="Search foods… (e.g. dosa, pizza, dal)" autocomplete="off">
+    <input id="searchInput" placeholder="Search foods… (e.g. dosa, biryani, Big Mac)" autocomplete="off">
     <div class="results" id="results"></div>
     <div class="manual">
       <div class="lbl">Not found? Add it manually:</div>
@@ -554,17 +945,19 @@ function addPanel(meal){
         <label>Calories<input type="number" id="mCal" inputmode="numeric"></label>
         <label>Protein (g)<input type="number" id="mPro" inputmode="numeric"></label>
       </div>
+      <div class="row2">
+        <label>Carbs (g, optional)<input type="number" id="mCarb" inputmode="numeric"></label>
+        <label>Fat (g, optional)<input type="number" id="mFat" inputmode="numeric"></label>
+      </div>
       <label class="checkline"><input type="checkbox" id="mSave" checked>Save to my foods for next time</label>
       <button class="confirm" onclick="addManual('${meal}')">Add to ${meal}</button>
     </div>
   </div>`;
 }
-
 function renderResults(meal){
   const q = (document.getElementById("searchInput")?.value || "").toLowerCase().trim();
   const box = document.getElementById("results");
   if (!box) return;
-  // My foods first (meal-matched to top when no query), then database
   let mine = foods.filter(f => f.name.toLowerCase().includes(q));
   if (!q) mine = [...mine.filter(f=>f.meal===meal), ...mine.filter(f=>f.meal!==meal)];
   const mineNames = new Set(mine.map(f=>f.name));
@@ -577,41 +970,44 @@ function renderResults(meal){
     `<button class="food-row" onclick="addFromDB('${esc(n).replace(/'/g,"\\'")}',${c},${p},'${meal}')">
       <span class="fn">${esc(n)}</span><span class="fm">${c} · ${p}g</span>
     </button>`).join("");
-  box.innerHTML = html || '<div class="empty" style="padding:8px">No match — add it manually below.</div>';
+  box.innerHTML = html || '<div class="empty" style="padding:8px">No match — add it manually below, or try the ✨ AI Quick Log at the bottom of this page.</div>';
 }
-
-// ================= Actions =================
 function toggleAdd(meal){ addingTo = addingTo === meal ? null : meal; renderMeals(); }
-
-function addEntry(name, cal, protein, meal){
-  log.push({id:uid(), name, cal, protein, meal, ts:Date.now()});
+function chgQty(id, d){
+  const e = log.find(x=>x.id===id);
+  if (!e) return;
+  e.qty = Math.min(10, Math.max(0.5, Math.round(((e.qty||1)+d)*2)/2));
+  persistLog();
+}
+function addEntry(name, cal, protein, meal, carbs, fat){
+  const m = (carbs!=null && fat!=null) ? {carbs, fat} : estimateMacros(name, cal, protein);
+  log.push({id:uid(), name, cal, protein, carbs:m.carbs, fat:m.fat, qty:1, meal, ts:Date.now()});
   addingTo = null;
   persistLog();
 }
-
 function addFromLibrary(fid, meal){
   const f = foods.find(x=>x.id===fid);
-  if (f) addEntry(f.name, f.cal, f.protein, meal);
+  if (f) addEntry(f.name, f.cal, f.protein, meal, f.carbs!=null?f.carbs:null, f.fat!=null?f.fat:null);
 }
-
-function addFromDB(name, cal, protein, meal){
-  addEntry(name, cal, protein, meal);
-}
-
+function addFromDB(name, cal, protein, meal){ addEntry(name, cal, protein, meal); }
 function addManual(meal){
   const name = document.getElementById("mName").value.trim();
   const cal = Number(document.getElementById("mCal").value) || 0;
   const pro = Number(document.getElementById("mPro").value) || 0;
+  const cv = document.getElementById("mCarb").value, fv = document.getElementById("mFat").value;
+  const carbs = cv==="" ? null : Number(cv)||0;
+  const fat = fv==="" ? null : Number(fv)||0;
   if (!name) return;
   if (document.getElementById("mSave").checked){
-    foods.push({id:uid(), name, cal, protein:pro, meal});
+    const f = {id:uid(), name, cal, protein:pro, meal};
+    if (carbs!=null) f.carbs = carbs;
+    if (fat!=null) f.fat = fat;
+    foods.push(f);
     LS.set("mdp_foods", foods);
   }
-  addEntry(name, cal, pro, meal);
+  addEntry(name, cal, pro, meal, carbs, fat);
 }
-
 function removeEntry(id){ log = log.filter(e=>e.id!==id); persistLog(); }
-
 function toggleTargets(){
   const p = document.getElementById("targetsPanel");
   p.classList.toggle("hide");
@@ -624,21 +1020,7 @@ function saveTargets(){
   renderTotals();
 }
 
-function loadHistory(){
-  const days = [];
-  for (let i = 1; i <= 7; i++){
-    const d = new Date(); d.setDate(d.getDate()-i);
-    const k = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-    const entries = LS.get("mdp_log_"+k, null);
-    if (entries) days.push({date:k, cal:entries.reduce((s,e)=>s+e.cal,0), protein:entries.reduce((s,e)=>s+e.protein,0)});
-  }
-  document.getElementById("histWrap").innerHTML = `<div class="hist">
-    <div class="serif" style="font-size:16px;margin-bottom:10px">Past days</div>
-    ${days.length ? days.map(d=>`<div class="row"><span style="color:var(--muted)">${d.date}</span><span>${d.cal} cal · <span style="color:var(--leaf)">${d.protein}g</span></span></div>`).join("")
-      : '<div class="empty">No past days yet — today is day one.</div>'}
-  </div>`;
-}
-
+// ================= Backup =================
 function exportData(){
   const data = {};
   for (let i=0;i<localStorage.length;i++){
@@ -648,7 +1030,7 @@ function exportData(){
   const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "my-daily-plate-backup-" + todayKey() + ".json";
+  a.download = "thalifit-backup-" + todayKey() + ".json";
   a.click();
 }
 function importData(ev){
@@ -667,7 +1049,6 @@ function importData(ev){
 
 // ================= AI quick log =================
 let aiItems = [];
-
 function guessMeal(){
   const h = new Date().getHours();
   if (h < 11) return "Morning";
@@ -675,7 +1056,6 @@ function guessMeal(){
   if (h < 23) return "Evening";
   return "Other";
 }
-
 async function aiParse(){
   const input = document.getElementById("aiInput");
   const status = document.getElementById("aiStatus");
@@ -693,15 +1073,17 @@ async function aiParse(){
     });
     const data = await r.json();
     if (!r.ok || !data.items) throw new Error(data.error || "parse failed");
-    aiItems = data.items.map(i => ({name:i.name, cal:i.calories, protein:i.protein_g, meal:guessMeal()}));
+    aiItems = data.items.map(i => ({name:i.name, cal:i.calories, protein:i.protein_g,
+      carbs: i.carbs_g!=null ? i.carbs_g : estimateMacros(i.name, i.calories, i.protein_g).carbs,
+      fat: i.fat_g!=null ? i.fat_g : estimateMacros(i.name, i.calories, i.protein_g).fat,
+      meal:guessMeal()}));
     status.textContent = aiItems.length ? "Check the numbers, then confirm:" : "Couldn't find any foods in that.";
     renderAiResults();
   } catch(e){
-    status.textContent = "AI couldn't parse that (offline or service issue). Use search or manual entry below.";
+    status.textContent = "AI couldn't parse that (offline or service issue). Use search or manual entry above.";
   }
   btn.disabled = false; btn.textContent = "Log";
 }
-
 function renderAiResults(){
   const box = document.getElementById("aiResults");
   if (!aiItems.length){ box.innerHTML = ""; return; }
@@ -712,7 +1094,7 @@ function renderAiResults(){
         <div style="display:flex;gap:6px;margin-top:6px;align-items:center">
           <input type="number" value="${it.cal}" onchange="aiItems[${idx}].cal=Number(this.value)||0" style="width:70px;padding:5px 7px;font-size:13px;background:var(--cardsoft)"> <span style="font-size:11px;color:var(--muted)">cal</span>
           <input type="number" value="${it.protein}" onchange="aiItems[${idx}].protein=Number(this.value)||0" style="width:55px;padding:5px 7px;font-size:13px;background:var(--cardsoft)"> <span style="font-size:11px;color:var(--muted)">g</span>
-          <select onchange="aiItems[${idx}].meal=this.value" style="background:var(--cardsoft);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px;font-size:12px">
+          <select onchange="aiItems[${idx}].meal=this.value" style="background:var(--cardsoft);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px;font-size:12px;width:auto">
             ${MEALS.map(m=>`<option ${m===it.meal?"selected":""}>${m}</option>`).join("")}
           </select>
         </div>
@@ -721,17 +1103,14 @@ function renderAiResults(){
     </div>`).join("") +
     `<button class="confirm" onclick="aiConfirm()">Add ${aiItems.length} item${aiItems.length>1?"s":""} (${aiItems.reduce((s,i)=>s+i.cal,0)} cal)</button>`;
 }
-
 function aiConfirm(){
-  aiItems.forEach(it => log.push({id:uid(), name:it.name, cal:it.cal, protein:it.protein, meal:it.meal, ts:Date.now()}));
+  aiItems.forEach(it => log.push({id:uid(), name:it.name, cal:it.cal, protein:it.protein, carbs:it.carbs||0, fat:it.fat||0, qty:1, meal:it.meal, ts:Date.now()}));
   aiItems = [];
   document.getElementById("aiResults").innerHTML = "";
   document.getElementById("aiStatus").textContent = "";
   document.getElementById("aiInput").value = "";
   persistLog();
 }
-
-// Voice input (browser speech recognition — free, on-device/Google, no API cost)
 function startVoice(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return;
@@ -752,26 +1131,23 @@ function startVoice(){
 document.getElementById("dateLabel").textContent = new Date().toLocaleDateString(undefined, {weekday:"long", month:"short", day:"numeric"});
 renderTotals();
 renderMeals();
-
-// Show AI box only when an endpoint is configured; show mic only when supported
 if (AI_ENDPOINT) {
   document.getElementById("aiBox").classList.remove("hide");
   document.getElementById("aiInput").addEventListener("keydown", e => { if (e.key === "Enter") aiParse(); });
   if (window.SpeechRecognition || window.webkitSpeechRecognition)
     document.getElementById("micBtn").classList.remove("hide");
 }
+if (!profile) setTimeout(()=>openOnboarding(), 600);
 
-// Roll over to a new day if app stays open past midnight
 setInterval(() => {
   if (todayKey() !== dateKey){
     dateKey = todayKey();
     log = LS.get("mdp_log_"+dateKey, []);
-    document.getElementById("dateLabel").textContent = new Date().toLocaleDateString(undefined, {weekday:"long", month:"short", day:"numeric"});
+    if (currentTab==="today") document.getElementById("dateLabel").textContent = new Date().toLocaleDateString(undefined, {weekday:"long", month:"short", day:"numeric"});
     renderTotals(); renderMeals();
   }
 }, 60000);
 
-// Service worker for offline use
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
