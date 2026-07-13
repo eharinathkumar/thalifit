@@ -567,6 +567,16 @@ let addingTo = null;
 let currentTab = "today";
 
 // ================= Tabs =================
+function greeting(){
+  const h = new Date().getHours();
+  const g = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+  return profile && profile.name ? g + ", " + profile.name + "!" : "";
+}
+function todayLabel(){
+  const d = new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
+  const g = greeting();
+  return g ? d + " · " + g : d;
+}
 function showTab(name){
   currentTab = name;
   ["today","trends","profile"].forEach(t => {
@@ -575,7 +585,7 @@ function showTab(name){
   });
   document.getElementById("targetsBtn").classList.toggle("hide", name!=="today");
   document.getElementById("dateLabel").textContent = name==="today"
-    ? new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})
+    ? todayLabel()
     : (name==="trends" ? "Your patterns, week by week" : "Your body, your goals");
   if (name==="trends") renderTrends();
   if (name==="profile") renderProfile();
@@ -603,15 +613,21 @@ function localPlan(p){
   if (p.goal==="build") cal = Math.round((tdee+250)/10)*10;
   const proPerKg = p.goal==="build" ? 1.8 : p.goal==="lose" ? 1.6 : 1.2;
   const protein = Math.round(p.weightKg * proPerKg);
+  const dietTip = {
+    vegan: "Vegan protein anchors: dal, chana, rajma, tofu, soya chunks, and a plant protein powder make " + protein + "g realistic.",
+    vegetarian: "Vegetarian protein anchors: paneer, Greek yogurt, dal, soya chunks, and a protein powder scoop or two.",
+    eggitarian: "Eggs are your easiest protein — 2-3 a day plus dal, paneer and yogurt covers most of your " + protein + "g.",
+    nonveg: "Lean chicken, fish and eggs make " + protein + "g straightforward; keep the fried preparations occasional."
+  }[p.diet] || "";
   const plan = {daily_calories: cal, protein_g: protein,
     summary: "Targets estimated with the Mifflin-St Jeor formula based on your stats and activity.",
     suggestions: [
       p.goal==="lose" ? "A moderate ~450 calorie daily deficit aims for about 0.4 kg (1 lb) per week — sustainable beats fast." :
       p.goal==="build" ? "A small surplus plus " + protein + "g protein daily supports muscle without excess fat gain." :
       "Consistency at maintenance keeps energy steady — protein at each meal helps.",
-      "Spread protein across all three meals rather than loading one.",
+      dietTip,
       "Weigh in weekly, same day and time, and judge by the trend, not single days."
-    ]};
+    ].filter(Boolean)};
   return plan;
 }
 
@@ -619,7 +635,8 @@ function localPlan(p){
 let ob = {units:"metric", sex:"", activity:"light", goal:"maintain"};
 function openOnboarding(existing){
   if (existing) ob = {units:existing.units, sex:existing.sex, activity:existing.activity, goal:existing.goal,
-    age:existing.age, weightKg:existing.weightKg, heightCm:existing.heightCm, steps:existing.steps};
+    age:existing.age, weightKg:existing.weightKg, heightCm:existing.heightCm, steps:existing.steps,
+    name:existing.name||"", diet:existing.diet||"vegetarian"};
   else ob = {units:"metric", sex:"", activity:"light", goal:"maintain"};
   renderOnboard(existing);
   document.getElementById("onboard").classList.remove("hide");
@@ -638,6 +655,15 @@ function renderOnboard(keepVals){
         <button class="${metric?'on':''}" onclick="obReadFields();obSet('units','metric')">Metric (kg, cm)</button>
         <button class="${!metric?'on':''}" onclick="obReadFields();obSet('units','imperial')">US (lb, ft/in)</button>
       </div></div>
+    <div class="row2">
+      <label>Your name<input type="text" id="obName" value="${ob.name||""}" placeholder="What should we call you?"></label>
+      <label>Diet<select id="obDiet">
+        <option value="vegetarian" ${(!ob.diet||ob.diet==="vegetarian")?"selected":""}>Vegetarian</option>
+        <option value="vegan" ${ob.diet==="vegan"?"selected":""}>Vegan</option>
+        <option value="eggitarian" ${ob.diet==="eggitarian"?"selected":""}>Veg + eggs</option>
+        <option value="nonveg" ${ob.diet==="nonveg"?"selected":""}>Non-vegetarian</option>
+      </select></label>
+    </div>
     <div class="row2">
       <label>Age<input type="number" id="obAge" inputmode="numeric" value="${ob.age||""}"></label>
       <label>Sex (for calorie math)<select id="obSex">
@@ -678,6 +704,8 @@ function renderOnboard(keepVals){
 function obReadFields(){
   const g = id => document.getElementById(id);
   if (!g("obAge")) return;
+  ob.name = (g("obName")?.value || "").trim().slice(0, 30);
+  ob.diet = g("obDiet")?.value || "vegetarian";
   ob.age = Number(g("obAge").value)||undefined;
   ob.sex = g("obSex").value;
   ob.activity = g("obActivity").value;
@@ -696,13 +724,13 @@ async function finishOnboarding(){
   const st = document.getElementById("obStatus");
   if (!ob.age || !ob.weightKg || !ob.heightCm){ st.textContent = "Please fill in age, weight, and height."; return; }
   st.textContent = AI_ENDPOINT ? "Asking AI to build your plan…" : "Calculating…";
-  const p = {units:ob.units, age:ob.age, sex:ob.sex, weightKg:Math.round(ob.weightKg*10)/10,
+  const p = {units:ob.units, name:ob.name||"", diet:ob.diet||"vegetarian", age:ob.age, sex:ob.sex, weightKg:Math.round(ob.weightKg*10)/10,
     heightCm:Math.round(ob.heightCm), activity:ob.activity, steps:ob.steps, goal:ob.goal, created:profile?.created || Date.now()};
   let plan = null;
   if (AI_ENDPOINT){
     try {
       const r = await fetch(AI_ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({type:"plan", profile:{age:p.age, sex:p.sex||"unspecified", weight_kg:p.weightKg, height_cm:p.heightCm,
+        body: JSON.stringify({type:"plan", profile:{name:p.name||"there", diet:p.diet, age:p.age, sex:p.sex||"unspecified", weight_kg:p.weightKg, height_cm:p.heightCm,
           bmi: calcBMI(p.weightKg,p.heightCm), activity:p.activity, avg_daily_steps:p.steps, goal:p.goal}})});
       const data = await r.json();
       if (r.ok && data.plan) plan = data.plan;
@@ -742,7 +770,7 @@ function renderProfile(){
   el.innerHTML = `
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div class="serif" style="font-size:18px">Your profile</div>
+        <div class="serif" style="font-size:18px">${profile.name?esc(profile.name)+"'s profile":"Your profile"}</div>
         <button class="btn-ghost" onclick="openOnboarding(profile)">Edit</button>
       </div>
       <div class="statgrid">
@@ -1128,7 +1156,7 @@ function startVoice(){
 }
 
 // ================= Init =================
-document.getElementById("dateLabel").textContent = new Date().toLocaleDateString(undefined, {weekday:"long", month:"short", day:"numeric"});
+document.getElementById("dateLabel").textContent = todayLabel();
 renderTotals();
 renderMeals();
 if (AI_ENDPOINT) {
@@ -1143,7 +1171,7 @@ setInterval(() => {
   if (todayKey() !== dateKey){
     dateKey = todayKey();
     log = LS.get("mdp_log_"+dateKey, []);
-    if (currentTab==="today") document.getElementById("dateLabel").textContent = new Date().toLocaleDateString(undefined, {weekday:"long", month:"short", day:"numeric"});
+    if (currentTab==="today") document.getElementById("dateLabel").textContent = todayLabel();
     renderTotals(); renderMeals();
   }
 }, 60000);
