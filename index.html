@@ -140,6 +140,8 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
       <div id="macroPie"></div>
     </div>
 
+    <div id="planCard"></div>
+
     <div id="meals"></div>
 
     <div id="aiBox" class="hide" style="background:var(--cardsoft);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:20px">
@@ -476,6 +478,19 @@ const DB = [
 ["Sub sandwich, veggie (12 in)", 460, 18], ["Caesar salad, no chicken", 220, 6],
 ["Garden salad + dressing", 150, 3], ["Milkshake (medium)", 560, 12], ["Pancakes (3, with syrup)", 520, 8],
 ["Waffle (1, with syrup)", 350, 6], ["Bagel with cream cheese", 360, 11],
+// ============ MEASURED PORTIONS (tsp / tbsp / cup) ============
+["Gingelly / sesame oil (1 tsp)", 40, 0], ["Gingelly / sesame oil (1 tbsp)", 120, 0],
+["Olive oil (1 tbsp)", 120, 0], ["Coconut oil (1 tbsp)", 120, 0], ["Cooking oil (1 tbsp)", 120, 0],
+["Ghee (1 tsp)", 45, 0], ["Ghee (1 tbsp)", 135, 0], ["Butter (1 tbsp)", 100, 0],
+["Sugar (1 tsp)", 16, 0], ["Sugar (1 tbsp)", 48, 0], ["Honey (1 tbsp)", 64, 0], ["Jaggery (1 tbsp)", 50, 0],
+["Peanuts (1 tbsp)", 50, 2], ["Peanuts (1/4 cup)", 160, 7], ["Peanuts (1/2 cup)", 320, 14],
+["Almonds (1 tbsp)", 40, 2], ["Almonds (1/4 cup)", 200, 7], ["Almonds (1/2 cup)", 400, 14],
+["Cashews (1 tbsp)", 45, 1], ["Cashews (1/4 cup)", 180, 5], ["Cashews (1/2 cup)", 360, 10],
+["Raisins (1 tbsp)", 30, 0], ["Peanut butter (1 tbsp)", 95, 4],
+["Milagai podi, dry (1 tbsp)", 45, 2], ["Coconut chutney (1 tbsp)", 35, 1],
+["Curd / yogurt (1/2 cup)", 75, 4], ["Trail mix (1 tbsp)", 45, 1],
+["Ice cream sundae (2 scoops with toppings)", 350, 5], ["Hot fudge sundae", 380, 6],
+["Ice cream (1/2 cup)", 140, 2],
 // ============ SNACKS ============
 ["Chips (small serving)", 150, 2], ["Potato chips (1 oz bag)", 160, 2], ["Popcorn (3 cups)", 95, 3],
 ["Murukku (2 pcs)", 170, 2], ["Mixture / chivda (1/2 cup)", 250, 5], ["Banana chips (1/2 cup)", 210, 1],
@@ -562,6 +577,7 @@ let log = LS.get("mdp_log_" + dateKey, []);
 log = log.map(e => ({...e, qty: e.qty || 1, ...(e.carbs != null ? {} : estimateMacros(e.name, e.cal, e.protein))}));
 let targets = LS.get("mdp_targets", {cal:2200, protein:132});
 let profile = LS.get("mdp_profile", null);
+if (profile && profile.diet === "nonveg") { profile.diet = "meat"; LS.set("mdp_profile", profile); }
 let weights = LS.get("mdp_weights", []);
 let addingTo = null;
 let currentTab = "today";
@@ -617,7 +633,8 @@ function localPlan(p){
     vegan: "Vegan protein anchors: dal, chana, rajma, tofu, soya chunks, and a plant protein powder make " + protein + "g realistic.",
     vegetarian: "Vegetarian protein anchors: paneer, Greek yogurt, dal, soya chunks, and a protein powder scoop or two.",
     eggitarian: "Eggs are your easiest protein — 2-3 a day plus dal, paneer and yogurt covers most of your " + protein + "g.",
-    nonveg: "Lean chicken, fish and eggs make " + protein + "g straightforward; keep the fried preparations occasional."
+    whitemeat: "Chicken breast, fish, and eggs are your lean anchors — grilled or curry preparations over fried keeps " + protein + "g easy and clean.",
+    meat: "Lean chicken, fish, eggs, and occasional mutton make " + protein + "g straightforward; keep the fried preparations occasional."
   }[p.diet] || "";
   const plan = {daily_calories: cal, protein_g: protein,
     summary: "Targets estimated with the Mifflin-St Jeor formula based on your stats and activity.",
@@ -661,7 +678,8 @@ function renderOnboard(keepVals){
         <option value="vegetarian" ${(!ob.diet||ob.diet==="vegetarian")?"selected":""}>Vegetarian</option>
         <option value="vegan" ${ob.diet==="vegan"?"selected":""}>Vegan</option>
         <option value="eggitarian" ${ob.diet==="eggitarian"?"selected":""}>Veg + eggs</option>
-        <option value="nonveg" ${ob.diet==="nonveg"?"selected":""}>Non-vegetarian</option>
+        <option value="whitemeat" ${ob.diet==="whitemeat"?"selected":""}>White meat only (chicken/fish)</option>
+        <option value="meat" ${ob.diet==="meat"?"selected":""}>Meat eater</option>
       </select></label>
     </div>
     <div class="row2">
@@ -670,6 +688,7 @@ function renderOnboard(keepVals){
         <option value="" ${!ob.sex?"selected":""}>Prefer not to say</option>
         <option value="male" ${ob.sex==="male"?"selected":""}>Male</option>
         <option value="female" ${ob.sex==="female"?"selected":""}>Female</option>
+        <option value="nonbinary" ${ob.sex==="nonbinary"?"selected":""}>Non-binary</option>
       </select></label>
     </div>
     <div class="row2">
@@ -749,6 +768,7 @@ async function finishOnboarding(){
   }
   document.getElementById("onboard").classList.add("hide");
   renderTotals();
+  renderPlanCard();
   showTab("profile");
 }
 
@@ -867,6 +887,73 @@ function renderTrends(){
       <div class="stat"><div class="v">${n}</div><div class="k">Days logged</div></div>
       <div class="stat"><div class="v">${n?hot30:"–"}</div><div class="k">High days</div></div>
     </div>`;
+}
+
+// ================= Daily AI meal plan =================
+function renderPlanCard(){
+  const el = document.getElementById("planCard");
+  if (!el) return;
+  if (!AI_ENDPOINT){ el.innerHTML = ""; return; }
+  if (!profile){
+    el.innerHTML = `<div class="card" style="padding:14px"><div style="font-size:13px;color:var(--muted)">✨ Set up your profile (Profile tab) to unlock a daily AI meal plan built around your goals.</div></div>`;
+    return;
+  }
+  const cached = LS.get("mdp_mealplan_" + dateKey, null);
+  if (!cached){
+    el.innerHTML = `<div class="card" style="padding:14px;display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div><div class="serif" style="font-size:16px">✨ Today's meal plan</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">Built for your ${targets.cal} cal / ${targets.protein}g protein goal</div></div>
+      <button class="btn-main" onclick="getMealPlan(false)" style="flex-shrink:0">Plan my day</button></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="serif" style="font-size:16px">✨ Today's meal plan</div>
+      <button class="btn-ghost" onclick="getMealPlan(true)">New plan</button>
+    </div>
+    ${cached.note ? `<div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4">${esc(cached.note)}</div>` : ""}
+    ${(cached.plan||[]).map((m,mi)=>`<div style="margin-top:12px">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.04em;color:${MEAL_COLORS[m.meal]||"var(--muted)"}">${esc(m.meal).toUpperCase()}</div>
+      ${(m.items||[]).map((it,ii)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px">
+        <span style="flex:1;line-height:1.35">${esc(it.name)}</span>
+        <span style="color:var(--muted);font-size:11px;white-space:nowrap">${it.calories} · ${it.protein_g}g</span>
+        <button onclick="addPlanItem(${mi},${ii})" title="Log this" style="background:var(--cardsoft);color:var(--leaf);width:28px;height:28px;padding:0;font-size:16px;flex-shrink:0">＋</button>
+      </div>`).join("")}
+    </div>`).join("")}
+    <div style="font-size:10px;color:var(--faint);margin-top:8px">Tap ＋ to log an item as you eat it. New plan gives you fresh ideas.</div>
+  </div>`;
+}
+async function getMealPlan(force){
+  const el = document.getElementById("planCard");
+  el.innerHTML = `<div class="card" style="padding:16px;text-align:center"><div style="font-size:13px;color:var(--muted)">✨ Cooking up your plan…</div></div>`;
+  try {
+    const history = LS.get("mdp_planhistory", []);
+    const r = await fetch(AI_ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({type:"mealplan", profile:{
+        name: profile.name || "there", diet: profile.diet || "vegetarian", goal: profile.goal,
+        calorie_target: targets.cal, protein_target: targets.protein,
+        avoid: history.slice(-40), seed: Math.floor(Math.random()*100000)
+      }})});
+    const data = await r.json();
+    if (!r.ok || !data.mealplan) throw new Error(data.error || "plan failed");
+    LS.set("mdp_mealplan_" + dateKey, data.mealplan);
+    const names = (data.mealplan.plan||[]).flatMap(m=>(m.items||[]).map(i=>i.name));
+    LS.set("mdp_planhistory", [...history, ...names].slice(-60));
+  } catch(e){
+    el.innerHTML = `<div class="card" style="padding:14px"><div style="font-size:13px;color:var(--chili)">Couldn't reach the AI right now — try again in a bit.</div>
+      <button class="btn-ghost" style="margin-top:8px" onclick="getMealPlan(false)">Retry</button></div>`;
+    return;
+  }
+  renderPlanCard();
+}
+function addPlanItem(mi, ii){
+  const c = LS.get("mdp_mealplan_" + dateKey, null);
+  if (!c || !c.plan[mi] || !c.plan[mi].items[ii]) return;
+  const m = c.plan[mi], it = m.items[ii];
+  const mealName = MEALS.includes(m.meal) ? m.meal : guessMeal();
+  const em = estimateMacros(it.name, it.calories, it.protein_g);
+  log.push({id:uid(), name:it.name, cal:it.calories, protein:it.protein_g, carbs:em.carbs, fat:em.fat, qty:1, meal:mealName, ts:Date.now()});
+  persistLog();
 }
 
 // ================= Today tab (rendering) =================
@@ -1046,6 +1133,7 @@ function saveTargets(){
   targets = {cal: Number(document.getElementById("tCal").value)||0, protein: Number(document.getElementById("tPro").value)||0};
   LS.set("mdp_targets", targets);
   renderTotals();
+  renderPlanCard();
 }
 
 // ================= Backup =================
@@ -1159,6 +1247,7 @@ function startVoice(){
 document.getElementById("dateLabel").textContent = todayLabel();
 renderTotals();
 renderMeals();
+renderPlanCard();
 if (AI_ENDPOINT) {
   document.getElementById("aiBox").classList.remove("hide");
   document.getElementById("aiInput").addEventListener("keydown", e => { if (e.key === "Enter") aiParse(); });
@@ -1172,7 +1261,7 @@ setInterval(() => {
     dateKey = todayKey();
     log = LS.get("mdp_log_"+dateKey, []);
     if (currentTab==="today") document.getElementById("dateLabel").textContent = todayLabel();
-    renderTotals(); renderMeals();
+    renderTotals(); renderMeals(); renderPlanCard();
   }
 }, 60000);
 
