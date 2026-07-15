@@ -206,7 +206,7 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
       <div><b>Under 18.5</b> — underweight</div>
       <div><b>18.5 – 24.9</b> — healthy range</div>
       <div><b>25 – 29.9</b> — overweight</div>
-      <div><b>30+</b> — obese range</div>
+      <div><b>30+</b> — above healthy range</div>
     </div>
     <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:14px">
       <b style="color:var(--text)">To measure it properly:</b><br>
@@ -222,7 +222,7 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
 <script>
 // ================= AI endpoint =================
 // Paste your Cloudflare Worker URL between the quotes (must start with https://)
-const AI_ENDPOINT = "https://thalifit-ai.harinathkumar.workers.dev";
+const AI_ENDPOINT = "";
 
 const DB = [
 // ============ HIS STAPLES ============
@@ -616,7 +616,7 @@ const fmtW = kg => !profile || profile.units==="metric" ? Math.round(kg*10)/10 +
 
 // ================= BMI & local plan fallback =================
 function calcBMI(kg, cm){ const m = cm/100; return Math.round((kg/(m*m))*10)/10; }
-function bmiCategory(b){ return b<18.5?"Underweight":b<25?"Healthy range":b<30?"Overweight":"Obese range"; }
+function bmiCategory(b){ return b<18.5?"Underweight":b<25?"Healthy range":b<30?"Overweight":"Above healthy range"; }
 function localPlan(p){
   // Mifflin-St Jeor
   const s = p.sex==="male" ? 5 : p.sex==="female" ? -161 : -78;
