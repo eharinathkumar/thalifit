@@ -67,6 +67,8 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
 .foot button{background:none;color:var(--faint);text-decoration:underline;font-size:11px;padding:0}
 .checkline{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin-top:10px}
 .checkline input{width:auto}
+.cuisine-chip{background:var(--cardsoft);border:1px solid var(--line);color:var(--muted);padding:7px 12px;border-radius:16px;font-size:12.5px}
+.cuisine-chip.on{background:var(--turmeric);border-color:var(--turmeric);color:#1a1508;font-weight:600}
 .hide{display:none!important}
 /* Tabs */
 .tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:50}
@@ -217,6 +219,11 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
     </div>
     <button class="btn-main" style="width:100%;margin-top:16px" onclick="document.getElementById('bmiModal').classList.add('hide')">Got it</button>
   </div>
+</div>
+
+<!-- Day detail sheet -->
+<div id="dayModal" class="overlay hide" onclick="if(event.target===this)this.classList.add('hide')">
+  <div class="sheet" id="dayModalContent"></div>
 </div>
 
 <script>
@@ -744,12 +751,18 @@ function localPlan(p){
 }
 
 // ================= Onboarding =================
-let ob = {units:"metric", sex:"", activity:"light", goal:"maintain"};
+const CUISINES = ["Indian","American","Italian","Mexican","Thai","Chinese","Mediterranean","Japanese","Korean"];
+let ob = {units:"metric", sex:"", activity:"light", goal:"maintain", cuisines:["Indian"]};
+function toggleCuisine(c){
+  obReadFields();
+  ob.cuisines = (ob.cuisines||[]).includes(c) ? ob.cuisines.filter(x=>x!==c) : [...(ob.cuisines||[]), c];
+  renderOnboard(true);
+}
 function openOnboarding(existing){
   if (existing) ob = {units:existing.units, sex:existing.sex, activity:existing.activity, goal:existing.goal,
     age:existing.age, weightKg:existing.weightKg, heightCm:existing.heightCm, steps:existing.steps,
-    name:existing.name||"", diet:existing.diet||"vegetarian"};
-  else ob = {units:"metric", sex:"", activity:"light", goal:"maintain"};
+    name:existing.name||"", diet:existing.diet||"vegetarian", cuisines:existing.cuisines||["Indian"]};
+  else ob = {units:"metric", sex:"", activity:"light", goal:"maintain", cuisines:["Indian"]};
   renderOnboard(existing);
   document.getElementById("onboard").classList.remove("hide");
 }
@@ -795,6 +808,10 @@ function renderOnboard(keepVals){
              <input type="number" id="obHin" inputmode="numeric" placeholder="in" value="${fi.inch}" style="background:var(--cardsoft);padding:7px 9px;font-size:14px">
            </div></label>`}
     </div>
+    <div class="field"><label>Cuisines you enjoy (tap all that apply)</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${CUISINES.map(c=>`<button type="button" class="cuisine-chip ${(ob.cuisines||[]).includes(c)?"on":""}" onclick="toggleCuisine('${c}')">${c}</button>`).join("")}
+      </div></div>
     <div class="field"><label>How active are you (outside workouts)?</label>
       <select id="obActivity">
         <option value="sedentary" ${ob.activity==="sedentary"?"selected":""}>Mostly sitting (desk job)</option>
@@ -838,13 +855,14 @@ async function finishOnboarding(){
   const st = document.getElementById("obStatus");
   if (!ob.age || !ob.weightKg || !ob.heightCm){ st.textContent = "Please fill in age, weight, and height."; return; }
   st.textContent = AI_ENDPOINT ? "Asking AI to build your plan…" : "Calculating…";
-  const p = {units:ob.units, name:ob.name||"", diet:ob.diet||"vegetarian", age:ob.age, sex:ob.sex, weightKg:Math.round(ob.weightKg*10)/10,
+  const p = {units:ob.units, name:ob.name||"", diet:ob.diet||"vegetarian", cuisines:(ob.cuisines&&ob.cuisines.length)?ob.cuisines:["Indian"],
+    age:ob.age, sex:ob.sex, weightKg:Math.round(ob.weightKg*10)/10,
     heightCm:Math.round(ob.heightCm), activity:ob.activity, steps:ob.steps, goal:ob.goal, created:profile?.created || Date.now()};
   let plan = null;
   if (AI_ENDPOINT){
     try {
       const r = await fetch(AI_ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({type:"plan", profile:{name:p.name||"there", diet:p.diet, age:p.age, sex:p.sex||"unspecified", weight_kg:p.weightKg, height_cm:p.heightCm,
+        body: JSON.stringify({type:"plan", profile:{name:p.name||"there", diet:p.diet, cuisines:p.cuisines, age:p.age, sex:p.sex||"unspecified", weight_kg:p.weightKg, height_cm:p.heightCm,
           bmi: calcBMI(p.weightKg,p.heightCm), activity:p.activity, avg_daily_steps:p.steps, goal:p.goal}})});
       const data = await r.json();
       if (r.ok && data.plan) plan = data.plan;
@@ -941,6 +959,47 @@ function dayTotals(k){
   if (!entries) return null;
   return {cal: entries.reduce((s,e)=>s+(e.cal||0)*(e.qty||1),0), protein: entries.reduce((s,e)=>s+(e.protein||0)*(e.qty||1),0)};
 }
+function openDayDetail(k){
+  const entries = LS.get("mdp_log_"+k, null);
+  const box = document.getElementById("dayModalContent");
+  const dateNice = new Date(k+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+  if (!entries || !entries.length){
+    box.innerHTML = `<h3>${dateNice}</h3><div class="empty" style="margin-top:8px">Nothing logged this day.</div>
+      <button class="btn-main" style="width:100%;margin-top:16px" onclick="document.getElementById('dayModal').classList.add('hide')">Close</button>`;
+  } else {
+    const q = e => e.qty||1;
+    const mac = e => (e.carbs!=null && e.fat!=null) ? {carbs:e.carbs, fat:e.fat} : estimateMacros(e.name, e.cal, e.protein);
+    let cal=0, pro=0, carb=0, fat=0;
+    entries.forEach(e => { const m=mac(e); cal+=e.cal*q(e); pro+=e.protein*q(e); carb+=m.carbs*q(e); fat+=m.fat*q(e); });
+    const pc=pro*4, cc=carb*4, fc=fat*9, mt=Math.max(1,pc+cc+fc);
+    const pPct=pc/mt*100, cPct=cc/mt*100;
+    const byMeal = MEALS.map(m=>({m, list:entries.filter(e=>e.meal===m)})).filter(g=>g.list.length);
+    box.innerHTML = `<h3>${dateNice}</h3>
+      <div class="statgrid">
+        <div class="stat"><div class="v">${Math.round(cal)}</div><div class="k">Calories</div></div>
+        <div class="stat"><div class="v">${Math.round(pro)}g</div><div class="k">Protein</div></div>
+        <div class="stat"><div class="v">${cal>=targets.cal*1.2?"🔥":"✓"}</div><div class="k">${cal>=targets.cal*1.2?"High day":"On track"}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;margin-top:14px">
+        <div style="width:84px;height:84px;border-radius:50%;flex-shrink:0;background:conic-gradient(var(--leaf) 0 ${pPct.toFixed(1)}%, var(--turmeric) ${pPct.toFixed(1)}% ${(pPct+cPct).toFixed(1)}%, var(--chili) ${(pPct+cPct).toFixed(1)}% 100%)"></div>
+        <div style="flex:1;font-size:12px">
+          <div style="display:flex;justify-content:space-between;padding:3px 0"><span><span class="dot" style="background:var(--leaf)"></span> Protein</span><span style="color:var(--muted)">${Math.round(pro)}g</span></div>
+          <div style="display:flex;justify-content:space-between;padding:3px 0"><span><span class="dot" style="background:var(--turmeric)"></span> Carbs</span><span style="color:var(--muted)">${Math.round(carb)}g</span></div>
+          <div style="display:flex;justify-content:space-between;padding:3px 0"><span><span class="dot" style="background:var(--chili)"></span> Fat</span><span style="color:var(--muted)">${Math.round(fat)}g</span></div>
+        </div>
+      </div>
+      ${byMeal.map(g=>`<div style="margin-top:12px">
+        <div style="font-size:12px;font-weight:600;color:${MEAL_COLORS[g.m]}">${g.m.toUpperCase()}</div>
+        ${g.list.map(e=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px">
+          <span style="flex:1;line-height:1.35">${esc(e.name)}${q(e)!==1?` <span style="color:var(--faint)">×${q(e)}</span>`:""}</span>
+          <span style="color:var(--muted);font-size:11px;white-space:nowrap">${Math.round(e.cal*q(e))} · ${Math.round(e.protein*q(e))}g</span>
+        </div>`).join("")}
+      </div>`).join("")}
+      <button class="btn-main" style="width:100%;margin-top:16px" onclick="document.getElementById('dayModal').classList.add('hide')">Close</button>`;
+  }
+  document.getElementById("dayModal").classList.remove("hide");
+}
+
 function renderTrends(){
   const days = [];
   for (let i=6;i>=0;i--){
@@ -959,7 +1018,7 @@ function renderTrends(){
   document.getElementById("stHot").textContent = logged.length ? hot.length : "–";
   const maxCal = Math.max(...days.map(d=>d.cal), targets.cal);
   document.getElementById("weekBars").innerHTML = days.map(d=>`
-    <div class="barcol">
+    <div class="barcol" onclick="openDayDetail('${d.key}')" style="cursor:pointer">
       <div style="font-size:9px;color:var(--faint)">${d.cal||""}</div>
       <div class="bar ${d.cal>=hotThreshold?"hot":""}" style="height:${d.cal?Math.max(4,(d.cal/maxCal)*100):3}%"></div>
       <div class="barlbl">${d.label}</div>
@@ -967,7 +1026,7 @@ function renderTrends(){
   document.getElementById("hotDaysCard").innerHTML = hot.length
     ? `<div class="serif" style="font-size:18px">🔥 High-calorie days this week</div>
        <div style="font-size:12px;color:var(--muted);margin-top:4px">Days 20%+ over your ${targets.cal} target. One cheat day won't undo a good week — patterns matter, not single days.</div>
-       ${hot.map(d=>`<div class="weightrow"><span style="color:var(--muted)">${d.key}</span><span style="color:var(--chili)">${d.cal} cal (+${d.cal-targets.cal})</span></div>`).join("")}`
+       ${hot.map(d=>`<div class="weightrow" onclick="openDayDetail('${d.key}')" style="cursor:pointer"><span style="color:var(--muted)">${d.key}</span><span style="color:var(--chili)">${d.cal} cal (+${d.cal-targets.cal})</span></div>`).join("")}`
     : `<div class="serif" style="font-size:18px">🔥 High-calorie days</div><div class="empty" style="margin-top:6px">${logged.length ? "None this week — steady as she goes!" : "Log a few days and your patterns will show up here."}</div>`;
   // 30-day view
   let sum=0, n=0, hot30=0;
@@ -1025,7 +1084,9 @@ async function getMealPlan(force){
     const history = LS.get("mdp_planhistory", []);
     const r = await fetch(AI_ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({type:"mealplan", profile:{
-        name: profile.name || "there", diet: profile.diet || "vegetarian", goal: profile.goal,
+        name: profile.name || "there", diet: profile.diet || "vegetarian",
+        cuisines: (profile.cuisines && profile.cuisines.length) ? profile.cuisines : ["Indian"],
+        goal: profile.goal,
         calorie_target: targets.cal, protein_target: targets.protein,
         avoid: history.slice(-40), seed: Math.floor(Math.random()*100000)
       }})});
