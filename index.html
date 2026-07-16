@@ -215,7 +215,7 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
       • Weigh yourself in the morning, after the bathroom, before eating, in light clothing.<br>
       • Use the same scale, on a hard floor, at the same time of day each week.<br>
       • Measure height without shoes, standing straight against a wall.<br><br>
-      <b style="color:var(--text)">Keep in mind:</b> BMI is a rough screening number. It can read "high" for muscular people and miss other health factors. Use the weekly weight trend here — not any single day — as your real signal, and talk to your doctor about what a healthy range means for you.
+      <b style="color:var(--text)">Keep in mind:</b> BMI is a rough screening number. It can read "high" for muscular people and miss other health factors. Also, for people of <b style="color:var(--text)">South Asian descent</b>, health bodies use lower cutoffs — above healthy weight from about <b style="color:var(--text)">23</b> and higher-risk from about <b style="color:var(--text)">27.5</b> — because cardiometabolic risk (especially diabetes) rises at lower BMI in South Asian populations. If that's your background, read your number with those thresholds in mind. Use the weekly weight trend here — not any single day — as your real signal, and talk to your doctor about what a healthy range means for you.
     </div>
     <button class="btn-main" style="width:100%;margin-top:16px" onclick="document.getElementById('bmiModal').classList.add('hide')">Got it</button>
   </div>
@@ -803,7 +803,7 @@ function localPlan(p){
 
 // ================= Onboarding =================
 const CUISINES = ["Indian","American","Italian","Mexican","Thai","Chinese","Mediterranean","Japanese","Korean"];
-let ob = {units:"metric", sex:"", activity:"light", goal:"maintain", cuisines:["Indian"]};
+let ob = {units:"metric", sex:"", activity:"light", goal:"maintain", cuisines:["Indian"], indianStyle:"surprise"};
 function toggleCuisine(c){
   obReadFields();
   ob.cuisines = (ob.cuisines||[]).includes(c) ? ob.cuisines.filter(x=>x!==c) : [...(ob.cuisines||[]), c];
@@ -812,8 +812,8 @@ function toggleCuisine(c){
 function openOnboarding(existing){
   if (existing) ob = {units:existing.units, sex:existing.sex, activity:existing.activity, goal:existing.goal,
     age:existing.age, weightKg:existing.weightKg, heightCm:existing.heightCm, steps:existing.steps,
-    name:existing.name||"", diet:existing.diet||"vegetarian", cuisines:existing.cuisines||["Indian"]};
-  else ob = {units:"metric", sex:"", activity:"light", goal:"maintain", cuisines:["Indian"]};
+    name:existing.name||"", diet:existing.diet||"vegetarian", cuisines:existing.cuisines||["Indian"], indianStyle:existing.indianStyle||"surprise"};
+  else ob = {units:"metric", sex:"", activity:"light", goal:"maintain", cuisines:["Indian"], indianStyle:"surprise"};
   renderOnboard(existing);
   document.getElementById("onboard").classList.remove("hide");
 }
@@ -863,6 +863,12 @@ function renderOnboard(keepVals){
       <div style="display:flex;flex-wrap:wrap;gap:6px">
         ${CUISINES.map(c=>`<button type="button" class="cuisine-chip ${(ob.cuisines||[]).includes(c)?"on":""}" onclick="toggleCuisine('${c}')">${c}</button>`).join("")}
       </div></div>
+    ${(ob.cuisines||[]).includes("Indian") ? `<div class="field"><label>Indian food — any leaning?</label>
+      <div class="seg">
+        <button class="${ob.indianStyle==="north"?"on":""}" onclick="obReadFields();obSet('indianStyle','north')">North</button>
+        <button class="${ob.indianStyle==="south"?"on":""}" onclick="obReadFields();obSet('indianStyle','south')">South</button>
+        <button class="${(!ob.indianStyle||ob.indianStyle==="surprise")?"on":""}" onclick="obReadFields();obSet('indianStyle','surprise')">Surprise me</button>
+      </div></div>` : ""}
     <div class="field"><label>How active are you (outside workouts)?</label>
       <select id="obActivity">
         <option value="sedentary" ${ob.activity==="sedentary"?"selected":""}>Mostly sitting (desk job)</option>
@@ -878,7 +884,7 @@ function renderOnboard(keepVals){
         <option value="build" ${ob.goal==="build"?"selected":""}>Build muscle</option>
       </select></label>
     </div>
-    <button class="btn-main" style="width:100%;margin-top:18px" onclick="finishOnboarding()">${AI_ENDPOINT ? "✨ Get my AI plan" : "Set my targets"}</button>
+    <button class="btn-main" id="obGo" style="width:100%;margin-top:18px" onclick="finishOnboarding()">${AI_ENDPOINT ? "✨ Get my AI plan" : "Set my targets"}</button>
     <div id="obStatus" style="font-size:12px;color:var(--faint);text-align:center;margin-top:8px"></div>
     ${profile ? "" : '<button class="link" style="display:block;margin:12px auto 0" onclick="document.getElementById(\'onboard\').classList.add(\'hide\')">Skip for now</button>'}
   `;
@@ -905,15 +911,17 @@ async function finishOnboarding(){
   obReadFields();
   const st = document.getElementById("obStatus");
   if (!ob.age || !ob.weightKg || !ob.heightCm){ st.textContent = "Please fill in age, weight, and height."; return; }
+  const goBtn = document.getElementById("obGo");
+  if (goBtn){ goBtn.disabled = true; goBtn.style.opacity = "0.5"; goBtn.textContent = AI_ENDPOINT ? "✨ Building your plan…" : "Calculating…"; }
   st.textContent = AI_ENDPOINT ? "Asking AI to build your plan…" : "Calculating…";
-  const p = {units:ob.units, name:ob.name||"", diet:ob.diet||"vegetarian", cuisines:(ob.cuisines&&ob.cuisines.length)?ob.cuisines:["Indian"],
+  const p = {units:ob.units, name:ob.name||"", diet:ob.diet||"vegetarian", cuisines:(ob.cuisines&&ob.cuisines.length)?ob.cuisines:["Indian"], indianStyle:ob.indianStyle||"surprise",
     age:ob.age, sex:ob.sex, weightKg:Math.round(ob.weightKg*10)/10,
     heightCm:Math.round(ob.heightCm), activity:ob.activity, steps:ob.steps, goal:ob.goal, created:profile?.created || Date.now()};
   let plan = null;
   if (AI_ENDPOINT){
     try {
       const r = await fetch(AI_ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({type:"plan", profile:{name:p.name||"there", diet:p.diet, cuisines:p.cuisines, age:p.age, sex:p.sex||"unspecified", weight_kg:p.weightKg, height_cm:p.heightCm,
+        body: JSON.stringify({type:"plan", profile:{name:p.name||"there", diet:p.diet, cuisines:p.cuisines, indian_style:p.indianStyle, age:p.age, sex:p.sex||"unspecified", weight_kg:p.weightKg, height_cm:p.heightCm,
           bmi: calcBMI(p.weightKg,p.heightCm), activity:p.activity, avg_daily_steps:p.steps, goal:p.goal}})});
       const data = await r.json();
       if (r.ok && data.plan) plan = data.plan;
@@ -1137,6 +1145,7 @@ async function getMealPlan(force){
       body: JSON.stringify({type:"mealplan", profile:{
         name: profile.name || "there", diet: profile.diet || "vegetarian",
         cuisines: (profile.cuisines && profile.cuisines.length) ? profile.cuisines : ["Indian"],
+        indian_style: profile.indianStyle || "surprise",
         goal: profile.goal,
         calorie_target: targets.cal, protein_target: targets.protein,
         avoid: history.slice(-40), seed: Math.floor(Math.random()*100000)
