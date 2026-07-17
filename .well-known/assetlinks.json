@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.eharinathkumar.thalifit",
+        "sha256_cert_fingerprints": ["5E:9C:01:8B:B8:26:09:D9:E4:96:87:5D:F1:23:BE:8B:ED:5B:BE:CC:0E:2A:4C:F1:00:DE:DC:93:F5:6D:BF:3A"]
+      }
+    }]
