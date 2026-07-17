@@ -202,7 +202,7 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
 <!-- BMI info sheet -->
 <div id="bmiModal" class="overlay hide" onclick="if(event.target===this)this.classList.add('hide')">
   <div class="sheet">
-    <h3>Understanding your BMI</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center"><h3>Understanding your BMI</h3><button onclick="document.getElementById('bmiModal').classList.add('hide')" style="background:none;color:var(--faint);font-size:22px;padding:2px 6px">✕</button></div>
     <div class="sub">Body Mass Index = weight (kg) ÷ height (m)²</div>
     <div class="tiplist">
       <div><b>Under 18.5</b> — underweight</div>
@@ -1023,7 +1023,7 @@ function openDayDetail(k){
   const box = document.getElementById("dayModalContent");
   const dateNice = new Date(k+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
   if (!entries || !entries.length){
-    box.innerHTML = `<h3>${dateNice}</h3><div class="empty" style="margin-top:8px">Nothing logged this day.</div>
+    box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><h3>${dateNice}</h3><button onclick="document.getElementById('dayModal').classList.add('hide')" style="background:none;color:var(--faint);font-size:22px;padding:2px 6px;flex-shrink:0">✕</button></div><div class="empty" style="margin-top:8px">Nothing logged this day.</div>
       <button class="btn-main" style="width:100%;margin-top:16px" onclick="document.getElementById('dayModal').classList.add('hide')">Close</button>`;
   } else {
     const q = e => e.qty||1;
@@ -1033,7 +1033,7 @@ function openDayDetail(k){
     const pc=pro*4, cc=carb*4, fc=fat*9, mt=Math.max(1,pc+cc+fc);
     const pPct=pc/mt*100, cPct=cc/mt*100;
     const byMeal = MEALS.map(m=>({m, list:entries.filter(e=>e.meal===m)})).filter(g=>g.list.length);
-    box.innerHTML = `<h3>${dateNice}</h3>
+    box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><h3>${dateNice}</h3><button onclick="document.getElementById('dayModal').classList.add('hide')" style="background:none;color:var(--faint);font-size:22px;padding:2px 6px;flex-shrink:0">✕</button></div>
       <div class="statgrid">
         <div class="stat"><div class="v">${Math.round(cal)}</div><div class="k">Calories</div></div>
         <div class="stat"><div class="v">${Math.round(pro)}g</div><div class="k">Protein</div></div>
@@ -1103,6 +1103,12 @@ function renderTrends(){
 }
 
 // ================= Daily AI meal plan =================
+let planCollapsed = LS.get("mdp_plan_collapsed", false);
+function togglePlanCard(){
+  planCollapsed = !planCollapsed;
+  LS.set("mdp_plan_collapsed", planCollapsed);
+  renderPlanCard();
+}
 function renderPlanCard(){
   const el = document.getElementById("planCard");
   if (!el) return;
@@ -1119,10 +1125,20 @@ function renderPlanCard(){
       <button class="btn-main" onclick="getMealPlan(false)" style="flex-shrink:0">Plan my day</button></div>`;
     return;
   }
+  if (planCollapsed){
+    const n = (cached.plan||[]).reduce((s,m)=>s+(m.items||[]).length,0);
+    el.innerHTML = `<div class="card" style="padding:13px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div style="font-size:14px" class="serif">✨ Today's meal plan <span style="font-size:11px;color:var(--faint);font-family:'Public Sans',sans-serif">${n} items ready</span></div>
+      <button class="btn-ghost" onclick="togglePlanCard()">Show</button></div>`;
+    return;
+  }
   el.innerHTML = `<div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
       <div class="serif" style="font-size:16px">✨ Today's meal plan</div>
-      <button class="btn-ghost" onclick="getMealPlan(true)">New plan</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn-ghost" onclick="getMealPlan(true)">New plan</button>
+        <button class="btn-ghost" onclick="togglePlanCard()">Hide</button>
+      </div>
     </div>
     ${cached.note ? `<div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4">${esc(cached.note)}</div>` : ""}
     ${(cached.plan||[]).map((m,mi)=>`<div style="margin-top:12px">
