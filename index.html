@@ -160,7 +160,7 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
 
     <div class="foot">
       Estimates only — tweak any number before adding.<br>
-      <button onclick="exportData()">Backup my data</button> · <button onclick="document.getElementById('importFile').click()">Restore backup</button>
+      <button onclick="exportData()">Backup my data</button> · <button onclick="document.getElementById('importFile').click()">Restore backup</button> · <a href="privacy.html" target="_blank" style="color:var(--faint)">Privacy</a>
       <input type="file" id="importFile" class="hide" accept=".json" onchange="importData(event)">
     </div>
   </div>
