@@ -15,6 +15,7 @@
   --turmeric:#E9A03B; --chili:#C96A3B; --leaf:#9BBF6A;
   --text:#F1EDE2; --muted:#9A9C8B; --faint:#6C7060;
 }
+body[data-theme="light"]{--bg:#F6F3EA;--card:#FFFFFF;--cardsoft:#EFEAD9;--line:#D9D3BF;--turmeric:#B97711;--chili:#AC4E20;--leaf:#5A8A2E;--text:#282A20;--muted:#636556;--faint:#8F9184}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Public Sans',system-ui,sans-serif;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 .wrap{max-width:480px;margin:0 auto;padding:20px 16px}
@@ -92,7 +93,7 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
 .bars{display:flex;align-items:flex-end;gap:6px;height:110px;margin-top:14px}
 .barcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
 .bar{width:100%;border-radius:5px 5px 0 0;background:var(--leaf);min-height:3px}
-.bar.hot{background:var(--chili)}
+.bar.hot{background:#C2679F}
 .barlbl{font-size:9px;color:var(--faint)}
 .tiplist{margin-top:10px}
 .tiplist div{font-size:13px;line-height:1.5;color:var(--text);padding:7px 0;border-bottom:1px solid var(--line)}
@@ -112,6 +113,7 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
 
   <!-- ============ TODAY TAB ============ -->
   <div id="tab-today">
+    <div id="dayNav"></div>
     <div id="targetsPanel" class="card hide" style="display:flex;gap:12px;padding:14px">
       <label style="flex:1;font-size:12px;color:var(--muted)">Calories<input type="number" id="tCal" onchange="saveTargets()" style="margin-top:4px"></label>
       <label style="flex:1;font-size:12px;color:var(--muted)">Protein (g)<input type="number" id="tPro" onchange="saveTargets()" style="margin-top:4px"></label>
@@ -177,7 +179,7 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
       <div class="bars" id="weekBars"></div>
       <div style="display:flex;gap:14px;margin-top:8px">
         <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span class="dot" style="background:var(--leaf)"></span>On track</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span class="dot" style="background:var(--chili)"></span>High day (20%+ over target)</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span class="dot" style="background:#C2679F"></span>High day (20%+ over target)</div>
       </div>
     </div>
     <div class="card" id="hotDaysCard"></div>
@@ -711,6 +713,15 @@ const DEFAULT_FOODS = [
 ];
 
 const MEALS = ["Morning","Afternoon","Evening","Other"];
+const MACRO_COLORS = {p:"#5B8DD6", c:"#E9A03B", f:"#C2679F"};
+let theme = (function(){ try { return JSON.parse(localStorage.getItem("mdp_theme")) || "dark"; } catch { return "dark"; } })();
+document.body.dataset.theme = theme;
+function setTheme(t){
+  theme = t;
+  try { localStorage.setItem("mdp_theme", JSON.stringify(t)); } catch {}
+  document.body.dataset.theme = t;
+  if (typeof currentTab !== "undefined" && currentTab === "profile") renderProfile();
+}
 const MEAL_COLORS = {Morning:"#E9A03B", Afternoon:"#C96A3B", Evening:"#9BBF6A", Other:"#7E8CA8"};
 const CIRC = 2*Math.PI*34;
 
@@ -742,6 +753,49 @@ function estimateMacros(name, cal, protein){
 }
 
 let dateKey = todayKey();
+let anchorToday = todayKey();
+function loadDayLog(){
+  log = LS.get("mdp_log_" + dateKey, []);
+  log = log.map(e => ({...e, qty: e.qty || 1, ...(e.carbs != null ? {} : estimateMacros(e.name, e.cal, e.protein))}));
+}
+function renderDayNav(){
+  const el = document.getElementById("dayNav");
+  if (!el) return;
+  const isToday = dateKey === todayKey();
+  const nice = isToday ? "Today" : new Date(dateKey+"T12:00:00").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+  el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;background:var(--card);border-radius:10px;padding:6px 8px">
+    <button onclick="goDay(-1)" class="btn-ghost" style="padding:4px 14px;font-size:15px">‹</button>
+    <div style="font-size:13px;color:${isToday?"var(--muted)":"var(--turmeric)"};font-weight:${isToday?"400":"600"}">${nice}${isToday?"":" · logging a past day"}</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      ${isToday ? "" : '<button class="btn-ghost" onclick="goToday()" style="padding:4px 10px;font-size:11px">Today</button>'}
+      <button onclick="goDay(1)" class="btn-ghost" style="padding:4px 14px;font-size:15px;${isToday?"opacity:.3":""}">›</button>
+    </div>
+  </div>`;
+}
+function refreshDayView(){
+  loadDayLog();
+  addingTo = null;
+  renderDayNav();
+  renderTotals();
+  renderMeals();
+  renderPlanCard();
+  document.getElementById("dateLabel").textContent = todayLabel();
+}
+function goDay(d){
+  const cur = new Date(dateKey + "T12:00:00");
+  cur.setDate(cur.getDate() + d);
+  const k = dayKeyOf(cur);
+  if (k > todayKey()) return;
+  dateKey = k;
+  refreshDayView();
+}
+function goToday(){ dateKey = todayKey(); refreshDayView(); }
+function editDay(k){
+  document.getElementById("dayModal").classList.add("hide");
+  dateKey = k;
+  showTab("today");
+  refreshDayView();
+}
 let foods = LS.get("mdp_foods", null);
 if (!foods) { foods = DEFAULT_FOODS; LS.set("mdp_foods", foods); }
 else {
@@ -757,6 +811,7 @@ let profile = LS.get("mdp_profile", null);
 if (profile && profile.diet === "nonveg") { profile.diet = "meat"; LS.set("mdp_profile", profile); }
 let weights = LS.get("mdp_weights", []);
 let addingTo = null;
+let entryMenu = null;
 let currentTab = "today";
 
 // ================= Tabs =================
@@ -766,6 +821,9 @@ function greeting(){
   return profile && profile.name ? g + ", " + profile.name + "!" : "";
 }
 function todayLabel(){
+  if (dateKey !== todayKey()){
+    return new Date(dateKey+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"}) + " · viewing a past day";
+  }
   const d = new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
   const g = greeting();
   return g ? d + " · " + g : d;
@@ -854,6 +912,11 @@ function renderOnboard(keepVals){
       <div class="seg">
         <button class="${metric?'on':''}" onclick="obReadFields();obSet('units','metric')">Metric (kg, cm)</button>
         <button class="${!metric?'on':''}" onclick="obReadFields();obSet('units','imperial')">US (lb, ft/in)</button>
+      </div></div>
+    <div class="field"><label>Appearance</label>
+      <div class="seg">
+        <button class="${theme==="dark"?"on":""}" onclick="obReadFields();setTheme('dark');renderOnboard(true)">Dark</button>
+        <button class="${theme==="light"?"on":""}" onclick="obReadFields();setTheme('light');renderOnboard(true)">Light</button>
       </div></div>
     <div class="row2">
       <label>Your name<input type="text" id="obName" value="${ob.name||""}" placeholder="What should we call you?"></label>
@@ -975,7 +1038,7 @@ function renderProfile(){
     el.innerHTML = `<div class="card" style="text-align:center;padding:28px 16px">
       <div class="serif" style="font-size:19px">Set up your profile</div>
       <div style="font-size:13px;color:var(--muted);margin:8px 0 16px;line-height:1.5">Tell ThaliFit about yourself and get personalized daily calorie and protein targets${AI_ENDPOINT?" — built by AI":""}.</div>
-      <button class="btn-main" onclick="openOnboarding()">Get started</button></div>`;
+      <button class="btn-main" onclick="openOnboarding()">Get started</button></div>` + settingsCard();
     return;
   }
   const bmi = calcBMI(profile.weightKg, profile.heightCm);
@@ -1018,7 +1081,17 @@ function renderProfile(){
       <div style="margin-top:8px">
         ${weights.slice(-8).reverse().map(w=>`<div class="weightrow"><span style="color:var(--muted)">${w.date}</span><span>${fmtW(w.kg)}</span></div>`).join("") || '<div class="empty">No entries yet — log your first weigh-in.</div>'}
       </div>
-    </div>`;
+    </div>` + settingsCard();
+}
+function settingsCard(){
+  return `<div class="card">
+    <div class="serif" style="font-size:18px">Settings</div>
+    <div class="field"><label>Appearance</label>
+      <div class="seg">
+        <button class="${theme==="dark"?"on":""}" onclick="setTheme('dark')">Dark</button>
+        <button class="${theme==="light"?"on":""}" onclick="setTheme('light')">Light</button>
+      </div></div>
+  </div>`;
 }
 function logWeightPrompt(){
   const unit = profile.units==="metric" ? "kg" : "lb";
@@ -1064,11 +1137,11 @@ function openDayDetail(k){
         <div class="stat"><div class="v">${cal>=targets.cal*1.2?"🔥":"✓"}</div><div class="k">${cal>=targets.cal*1.2?"High day":"On track"}</div></div>
       </div>
       <div style="display:flex;align-items:center;gap:16px;margin-top:14px">
-        <div style="width:84px;height:84px;border-radius:50%;flex-shrink:0;background:conic-gradient(var(--leaf) 0 ${pPct.toFixed(1)}%, var(--turmeric) ${pPct.toFixed(1)}% ${(pPct+cPct).toFixed(1)}%, var(--chili) ${(pPct+cPct).toFixed(1)}% 100%)"></div>
+        <div style="width:84px;height:84px;border-radius:50%;flex-shrink:0;background:conic-gradient(${MACRO_COLORS.p} 0 ${pPct.toFixed(1)}%, ${MACRO_COLORS.c} ${pPct.toFixed(1)}% ${(pPct+cPct).toFixed(1)}%, ${MACRO_COLORS.f} ${(pPct+cPct).toFixed(1)}% 100%)"></div>
         <div style="flex:1;font-size:12px">
-          <div style="display:flex;justify-content:space-between;padding:3px 0"><span><span class="dot" style="background:var(--leaf)"></span> Protein</span><span style="color:var(--muted)">${Math.round(pro)}g</span></div>
-          <div style="display:flex;justify-content:space-between;padding:3px 0"><span><span class="dot" style="background:var(--turmeric)"></span> Carbs</span><span style="color:var(--muted)">${Math.round(carb)}g</span></div>
-          <div style="display:flex;justify-content:space-between;padding:3px 0"><span><span class="dot" style="background:var(--chili)"></span> Fat</span><span style="color:var(--muted)">${Math.round(fat)}g</span></div>
+          <div style="display:flex;justify-content:space-between;padding:3px 0"><span><span class="dot" style="background:${MACRO_COLORS.p}"></span> Protein</span><span style="color:var(--muted)">${Math.round(pro)}g</span></div>
+          <div style="display:flex;justify-content:space-between;padding:3px 0"><span><span class="dot" style="background:${MACRO_COLORS.c}"></span> Carbs</span><span style="color:var(--muted)">${Math.round(carb)}g</span></div>
+          <div style="display:flex;justify-content:space-between;padding:3px 0"><span><span class="dot" style="background:${MACRO_COLORS.f}"></span> Fat</span><span style="color:var(--muted)">${Math.round(fat)}g</span></div>
         </div>
       </div>
       ${byMeal.map(g=>`<div style="margin-top:12px">
@@ -1078,7 +1151,8 @@ function openDayDetail(k){
           <span style="color:var(--muted);font-size:11px;white-space:nowrap">${Math.round(e.cal*q(e))} · ${Math.round(e.protein*q(e))}g</span>
         </div>`).join("")}
       </div>`).join("")}
-      <button class="btn-main" style="width:100%;margin-top:16px" onclick="document.getElementById('dayModal').classList.add('hide')">Close</button>`;
+      <button class="btn-ghost" style="width:100%;margin-top:14px" onclick="editDay('${k}')">Add or edit this day</button>
+      <button class="btn-main" style="width:100%;margin-top:8px" onclick="document.getElementById('dayModal').classList.add('hide')">Close</button>`;
   }
   document.getElementById("dayModal").classList.remove("hide");
 }
@@ -1136,6 +1210,7 @@ function togglePlanCard(){
 function renderPlanCard(){
   const el = document.getElementById("planCard");
   if (!el) return;
+  if (dateKey !== todayKey()){ el.innerHTML = ""; return; }
   if (!AI_ENDPOINT){ el.innerHTML = ""; return; }
   if (!profile){
     el.innerHTML = `<div class="card" style="padding:14px"><div style="font-size:13px;color:var(--muted)">✨ Set up your profile (Profile tab) to unlock a daily AI meal plan built around your goals.</div></div>`;
@@ -1258,13 +1333,13 @@ function renderTotals(){
   const pPct = pc/mt*100, cPct = cc/mt*100, fPct = fc/mt*100;
   pie.innerHTML = `
     <div style="display:flex;align-items:center;gap:16px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
-      <div style="width:92px;height:92px;border-radius:50%;flex-shrink:0;background:conic-gradient(var(--leaf) 0 ${pPct.toFixed(1)}%, var(--turmeric) ${pPct.toFixed(1)}% ${(pPct+cPct).toFixed(1)}%, var(--chili) ${(pPct+cPct).toFixed(1)}% 100%);display:flex;align-items:center;justify-content:center">
+      <div style="width:92px;height:92px;border-radius:50%;flex-shrink:0;background:conic-gradient(${MACRO_COLORS.p} 0 ${pPct.toFixed(1)}%, ${MACRO_COLORS.c} ${pPct.toFixed(1)}% ${(pPct+cPct).toFixed(1)}%, ${MACRO_COLORS.f} ${(pPct+cPct).toFixed(1)}% 100%);display:flex;align-items:center;justify-content:center">
         <div style="width:52px;height:52px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--muted);text-align:center;line-height:1.3">MACRO<br>SPLIT</div>
       </div>
       <div style="flex:1;font-size:12px">
-        <div style="display:flex;justify-content:space-between;padding:4px 0"><span><span class="dot" style="background:var(--leaf)"></span> Protein</span><span style="color:var(--muted)">${Math.round(pro)}g · ${Math.round(pPct)}%</span></div>
-        <div style="display:flex;justify-content:space-between;padding:4px 0"><span><span class="dot" style="background:var(--turmeric)"></span> Carbs</span><span style="color:var(--muted)">${Math.round(carb)}g · ${Math.round(cPct)}%</span></div>
-        <div style="display:flex;justify-content:space-between;padding:4px 0"><span><span class="dot" style="background:var(--chili)"></span> Fat</span><span style="color:var(--muted)">${Math.round(fat)}g · ${Math.round(fPct)}%</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0"><span><span class="dot" style="background:${MACRO_COLORS.p}"></span> Protein</span><span style="color:var(--muted)">${Math.round(pro)}g · ${Math.round(pPct)}%</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0"><span><span class="dot" style="background:${MACRO_COLORS.c}"></span> Carbs</span><span style="color:var(--muted)">${Math.round(carb)}g · ${Math.round(cPct)}%</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0"><span><span class="dot" style="background:${MACRO_COLORS.f}"></span> Fat</span><span style="color:var(--muted)">${Math.round(fat)}g · ${Math.round(fPct)}%</span></div>
       </div>
     </div>
     <div style="font-size:10px;color:var(--faint);margin-top:6px">Carbs & fat are estimates for database foods; AI-logged items use real values.</div>`;
@@ -1287,7 +1362,7 @@ function renderMeals(){
       </div>
       ${!entries.length && !open ? '<div class="empty">Nothing logged yet.</div>' : ""}
       ${entries.map(e=>{const eq=e.qty||1;return `<div class="entry">
-        <div style="flex:1;min-width:0"><div class="nm">${esc(e.name)}</div>
+        <div style="flex:1;min-width:0;cursor:pointer" onclick="toggleEntryMenu('${e.id}')"><div class="nm">${esc(e.name)}</div>
         <div class="meta">${Math.round(e.cal*eq)} cal · ${Math.round(e.protein*eq)}g P · ${Math.round((e.carbs||0)*eq)}g C · ${Math.round((e.fat||0)*eq)}g F</div></div>
         <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
           <button onclick="chgQty('${e.id}',-0.5)" style="background:var(--cardsoft);color:var(--muted);width:26px;height:26px;padding:0;font-size:15px;border-radius:6px">−</button>
@@ -1295,7 +1370,7 @@ function renderMeals(){
           <button onclick="chgQty('${e.id}',0.5)" style="background:var(--cardsoft);color:var(--muted);width:26px;height:26px;padding:0;font-size:15px;border-radius:6px">+</button>
         </div>
         <button class="x" onclick="removeEntry('${e.id}')" aria-label="Remove">✕</button>
-      </div>`}).join("")}
+      </div>${entryMenu===e.id?`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:-2px 2px 10px;padding-left:2px"><span style="font-size:11px;color:var(--faint)">Move to:</span>${MEALS.filter(m=>m!==e.meal).map(m=>`<button class="cuisine-chip" onclick="moveEntry('${e.id}','${m}')">${m}</button>`).join("")}</div>`:""}`}).join("")}
       ${open ? addPanel(meal) : ""}
     </div>`;
   }).join("");
@@ -1343,7 +1418,15 @@ function renderResults(meal){
     </button>`).join("");
   box.innerHTML = html || '<div class="empty" style="padding:8px">No match — add it manually below, or try the ✨ AI Quick Log at the bottom of this page.</div>';
 }
-function toggleAdd(meal){ addingTo = addingTo === meal ? null : meal; renderMeals(); }
+function toggleAdd(meal){ addingTo = addingTo === meal ? null : meal; entryMenu = null; renderMeals(); }
+function toggleEntryMenu(id){ entryMenu = entryMenu === id ? null : id; renderMeals(); }
+function moveEntry(id, meal){
+  const e = log.find(x=>x.id===id);
+  if (!e) return;
+  e.meal = meal;
+  entryMenu = null;
+  persistLog();
+}
 function chgQty(id, d){
   const e = log.find(x=>x.id===id);
   if (!e) return;
@@ -1501,6 +1584,7 @@ function startVoice(){
 
 // ================= Init =================
 document.getElementById("dateLabel").textContent = todayLabel();
+renderDayNav();
 renderTotals();
 renderMeals();
 renderPlanCard();
@@ -1513,11 +1597,12 @@ if (AI_ENDPOINT) {
 if (!profile) setTimeout(()=>openOnboarding(), 600);
 
 setInterval(() => {
-  if (todayKey() !== dateKey){
-    dateKey = todayKey();
-    log = LS.get("mdp_log_"+dateKey, []);
-    if (currentTab==="today") document.getElementById("dateLabel").textContent = todayLabel();
-    renderTotals(); renderMeals(); renderPlanCard();
+  const t = todayKey();
+  if (t !== anchorToday){
+    const wasViewingToday = dateKey === anchorToday;
+    anchorToday = t;
+    if (wasViewingToday){ dateKey = t; refreshDayView(); }
+    else renderDayNav();
   }
 }, 60000);
 
