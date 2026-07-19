@@ -108,7 +108,10 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
       <div class="h1" id="pageTitle">ThaliFit<span id="saveChip" class="chip"></span></div>
       <div class="sub" id="dateLabel"></div>
     </div>
-    <button class="btn-ghost" id="targetsBtn" onclick="toggleTargets()">Targets</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn-ghost hide" id="themeBtn" onclick="toggleTheme()">☀️</button>
+      <button class="btn-ghost" id="targetsBtn" onclick="toggleTargets()">Targets</button>
+    </div>
   </div>
 
   <!-- ============ TODAY TAB ============ -->
@@ -370,7 +373,10 @@ const DB = [
 // ============ INDIAN BEVERAGES ============
 ["Chai with milk & sugar (1 cup)", 100, 2], ["Indian tea with milk & sugar (1 cup)", 100, 2],
 ["Masala chai (1 cup)", 110, 2], ["Filter coffee (1 cup)", 90, 2],
-["Indian coffee with milk & sugar (1 cup)", 100, 2], ["Black coffee", 5, 0],
+["Indian coffee with milk & sugar (1 cup)", 100, 2], ["Filter coffee with milk, no sugar (1 cup)", 60, 2],
+["Tea with milk, no sugar (1 cup)", 50, 2], ["Black tea, no sugar (1 cup)", 2, 0],
+["Black tea with sugar (1 cup)", 20, 0], ["Black coffee with sugar (1 cup)", 21, 0],
+["Black coffee", 5, 0],
 ["Lassi, sweet (1 cup)", 220, 6], ["Salt lassi (1 cup)", 120, 5], ["Mango lassi (1 cup)", 260, 6],
 ["Buttermilk / neer mor (1 cup)", 60, 3], ["Badam milk (1 cup)", 200, 6], ["Rose milk (1 cup)", 180, 5],
 ["Sugarcane juice (1 cup)", 180, 0], ["Jigarthanda (1 glass)", 350, 6], ["Falooda (1 glass)", 380, 7],
@@ -720,7 +726,12 @@ function setTheme(t){
   theme = t;
   try { localStorage.setItem("mdp_theme", JSON.stringify(t)); } catch {}
   document.body.dataset.theme = t;
-  if (typeof currentTab !== "undefined" && currentTab === "profile") renderProfile();
+  updateThemeBtn();
+}
+function toggleTheme(){ setTheme(theme === "dark" ? "light" : "dark"); }
+function updateThemeBtn(){
+  const b = document.getElementById("themeBtn");
+  if (b) b.textContent = theme === "dark" ? "☀️ Light" : "🌙 Dark";
 }
 const MEAL_COLORS = {Morning:"#E9A03B", Afternoon:"#C96A3B", Evening:"#9BBF6A", Other:"#7E8CA8"};
 const CIRC = 2*Math.PI*34;
@@ -835,6 +846,8 @@ function showTab(name){
     document.getElementById("tabbtn-"+t).classList.toggle("active", t===name);
   });
   document.getElementById("targetsBtn").classList.toggle("hide", name!=="today");
+  document.getElementById("themeBtn").classList.toggle("hide", name!=="profile");
+  updateThemeBtn();
   document.getElementById("dateLabel").textContent = name==="today"
     ? todayLabel()
     : (name==="trends" ? "Your patterns, week by week" : "Your body, your goals");
@@ -1038,7 +1051,7 @@ function renderProfile(){
     el.innerHTML = `<div class="card" style="text-align:center;padding:28px 16px">
       <div class="serif" style="font-size:19px">Set up your profile</div>
       <div style="font-size:13px;color:var(--muted);margin:8px 0 16px;line-height:1.5">Tell ThaliFit about yourself and get personalized daily calorie and protein targets${AI_ENDPOINT?" — built by AI":""}.</div>
-      <button class="btn-main" onclick="openOnboarding()">Get started</button></div>` + settingsCard();
+      <button class="btn-main" onclick="openOnboarding()">Get started</button></div>`;
     return;
   }
   const bmi = calcBMI(profile.weightKg, profile.heightCm);
@@ -1081,17 +1094,7 @@ function renderProfile(){
       <div style="margin-top:8px">
         ${weights.slice(-8).reverse().map(w=>`<div class="weightrow"><span style="color:var(--muted)">${w.date}</span><span>${fmtW(w.kg)}</span></div>`).join("") || '<div class="empty">No entries yet — log your first weigh-in.</div>'}
       </div>
-    </div>` + settingsCard();
-}
-function settingsCard(){
-  return `<div class="card">
-    <div class="serif" style="font-size:18px">Settings</div>
-    <div class="field"><label>Appearance</label>
-      <div class="seg">
-        <button class="${theme==="dark"?"on":""}" onclick="setTheme('dark')">Dark</button>
-        <button class="${theme==="light"?"on":""}" onclick="setTheme('light')">Light</button>
-      </div></div>
-  </div>`;
+    </div>`;
 }
 function logWeightPrompt(){
   const unit = profile.units==="metric" ? "kg" : "lb";
