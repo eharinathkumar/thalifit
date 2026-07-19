@@ -1419,7 +1419,42 @@ function renderResults(meal){
     `<button class="food-row" onclick="addFromDB('${esc(n).replace(/'/g,"\\'")}',${c},${p},'${meal}')">
       <span class="fn">${esc(n)}</span><span class="fm">${c} · ${p}g</span>
     </button>`).join("");
-  box.innerHTML = html || '<div class="empty" style="padding:8px">No match — add it manually below, or try the ✨ AI Quick Log at the bottom of this page.</div>';
+  let aiExtra = "";
+  if (q.length >= 3 && AI_ENDPOINT && (mine.length + db.length) < 3){
+    aiExtra = `<button onclick="aiSearchLookup('${meal}')" style="width:100%;margin-top:8px;background:var(--cardsoft);color:var(--turmeric);border:1px dashed var(--line);padding:10px 0;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer">✨ Can't find it? Ask AI</button><div id="searchAiBox"></div>`;
+  }
+  box.innerHTML = (html || '<div class="empty" style="padding:8px">No match yet.</div>') + aiExtra;
+}
+async function aiSearchLookup(meal){
+  const q = (document.getElementById("searchInput")?.value || "").trim();
+  const box = document.getElementById("searchAiBox");
+  if (!q || !AI_ENDPOINT || !box) return;
+  box.innerHTML = `<div style="font-size:12px;color:var(--faint);padding:8px 4px">✨ Asking AI about "${esc(q)}"…</div>`;
+  try {
+    const r = await fetch(AI_ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({text: q})});
+    const data = await r.json();
+    if (!r.ok || !data.items || !data.items.length) throw new Error(data.error || "no items");
+    let savedAny = false;
+    const shown = data.items.map(i => {
+      const em = estimateMacros(i.name, i.calories, i.protein_g);
+      let f = foods.find(x => x.name === i.name);
+      if (!f){
+        f = {id: uid(), name: i.name, cal: i.calories, protein: i.protein_g,
+             carbs: i.carbs_g != null ? i.carbs_g : em.carbs,
+             fat: i.fat_g != null ? i.fat_g : em.fat, meal};
+        foods.push(f);
+        savedAny = true;
+      }
+      return f;
+    });
+    if (savedAny) LS.set("mdp_foods", foods);
+    box.innerHTML = `<div style="font-size:11px;color:var(--leaf);padding:8px 4px 4px">✨ Found it — saved to your foods. Tap to log:</div>` +
+      shown.map(f => `<button class="food-row" onclick="addFromLibrary('${f.id}','${meal}')">
+        <span class="fn">${esc(f.name)}</span><span class="tag">✨ new</span><span class="fm">${f.cal} · ${f.protein}g</span>
+      </button>`).join("");
+  } catch(e){
+    box.innerHTML = `<div style="font-size:12px;color:var(--chili);padding:8px 4px">AI couldn't figure that one out — add it manually below.</div>`;
+  }
 }
 function toggleAdd(meal){ addingTo = addingTo === meal ? null : meal; entryMenu = null; renderMeals(); }
 function toggleEntryMenu(id){ entryMenu = entryMenu === id ? null : id; renderMeals(); }
@@ -1562,7 +1597,15 @@ function renderAiResults(){
     `<button class="confirm" onclick="aiConfirm()">Add ${aiItems.length} item${aiItems.length>1?"s":""} (${aiItems.reduce((s,i)=>s+i.cal,0)} cal)</button>`;
 }
 function aiConfirm(){
-  aiItems.forEach(it => log.push({id:uid(), name:it.name, cal:it.cal, protein:it.protein, carbs:it.carbs||0, fat:it.fat||0, qty:1, meal:it.meal, ts:Date.now()}));
+  let savedAny = false;
+  aiItems.forEach(it => {
+    log.push({id:uid(), name:it.name, cal:it.cal, protein:it.protein, carbs:it.carbs||0, fat:it.fat||0, qty:1, meal:it.meal, ts:Date.now()});
+    if (!foods.some(f => f.name === it.name)){
+      foods.push({id:uid(), name:it.name, cal:it.cal, protein:it.protein, carbs:it.carbs||0, fat:it.fat||0, meal:it.meal});
+      savedAny = true;
+    }
+  });
+  if (savedAny) LS.set("mdp_foods", foods);
   aiItems = [];
   document.getElementById("aiResults").innerHTML = "";
   document.getElementById("aiStatus").textContent = "";
