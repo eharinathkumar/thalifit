@@ -821,6 +821,103 @@ let targets = LS.get("mdp_targets", {cal:2200, protein:132});
 let profile = LS.get("mdp_profile", null);
 if (profile && profile.diet === "nonveg") { profile.diet = "meat"; LS.set("mdp_profile", profile); }
 let weights = LS.get("mdp_weights", []);
+let readings = LS.get("mdp_readings", []);
+let readingPrefs = LS.get("mdp_reading_prefs", null) || {fasting:0, postmeal:0, hba1c:90, bp:7};
+const READING_TYPES = [
+  {k:"fasting", label:"Fasting glucose", unit:"mg/dL"},
+  {k:"postmeal", label:"Post-meal glucose", unit:"mg/dL"},
+  {k:"hba1c", label:"HbA1c", unit:"%"},
+  {k:"bp", label:"Blood pressure", unit:"mmHg"},
+];
+const INTERVAL_OPTS = [[0,"Reminder off"],[1,"Daily"],[7,"Weekly"],[14,"Every 2 weeks"],[30,"Monthly"],[90,"Every 3 months"],[180,"Every 6 months"]];
+function readingsEnabled(){
+  const c = (profile && profile.conditions) || [];
+  return (profile && profile.trackReadings) || c.some(x => ["diabetes_t1","diabetes_t2","prediabetes","bp"].includes(x));
+}
+function relevantReadingTypes(){
+  const c = (profile && profile.conditions) || [];
+  if (profile && profile.trackReadings) return READING_TYPES;
+  const t = [];
+  if (c.some(x => x==="diabetes_t1" || x==="diabetes_t2" || x==="prediabetes")) t.push(READING_TYPES[0], READING_TYPES[1], READING_TYPES[2]);
+  if (c.includes("bp")) t.push(READING_TYPES[3]);
+  return t;
+}
+function lastReading(k){
+  const r = readings.filter(x => x.type === k);
+  return r.length ? r[r.length-1] : null;
+}
+function readingDue(k){
+  const iv = readingPrefs[k];
+  if (!iv) return false;
+  const lr = lastReading(k);
+  if (!lr) return true;
+  return (Date.now() - lr.ts) > iv * 86400000;
+}
+function fmtReading(r){
+  return r.type === "bp" ? r.value + "/" + r.value2 : r.value + "";
+}
+function logReading(k){
+  const t = READING_TYPES.find(x => x.k === k);
+  if (k === "bp"){
+    const s = Number(prompt("Systolic (top number):"));
+    if (!s) return;
+    const d = Number(prompt("Diastolic (bottom number):"));
+    if (!d) return;
+    readings.push({id:uid(), type:k, value:Math.round(s), value2:Math.round(d), date:todayKey(), ts:Date.now()});
+  } else {
+    const v = Number(prompt(t.label + " (" + t.unit + "):"));
+    if (!v) return;
+    readings.push({id:uid(), type:k, value:Math.round(v*10)/10, date:todayKey(), ts:Date.now()});
+  }
+  LS.set("mdp_readings", readings);
+  renderProfile();
+}
+function setReadingInterval(k, v){
+  readingPrefs = {...readingPrefs, [k]: Number(v)};
+  LS.set("mdp_reading_prefs", readingPrefs);
+  renderProfile();
+}
+function enableReadings(){
+  profile.trackReadings = true;
+  LS.set("mdp_profile", profile);
+  renderProfile();
+}
+function readingsCard(){
+  if (!profile) return "";
+  if (!readingsEnabled())
+    return `<div class="card" style="padding:12px 16px"><button class="link" onclick="enableReadings()">+ Track health readings (blood sugar, BP) — optional</button></div>`;
+  const types = relevantReadingTypes();
+  if (!types.length) return "";
+  const anyDue = types.some(t => readingDue(t.k));
+  return `<div class="card">
+    <div class="serif" style="font-size:18px">Health readings</div>
+    ${anyDue ? `<div style="font-size:12px;color:var(--turmeric);margin-top:4px">A reading looks due — a quick log keeps your record ready for your next appointment.</div>` : ""}
+    ${types.map(t => {
+      const lr = lastReading(t.k);
+      const due = readingDue(t.k);
+      const hist = readings.filter(x => x.type === t.k).slice(-5).reverse();
+      return `<div style="border-top:1px solid var(--line);padding:11px 0 9px;margin-top:${t===types[0]?"10px":"0"}">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13.5px;font-weight:600">${t.label} ${due ? '<span style="font-size:10px;background:var(--turmeric);color:#1a1508;border-radius:8px;padding:1px 7px;font-weight:700;vertical-align:1px">DUE</span>' : ""}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">${lr ? "Last: <b style='color:var(--text)'>" + fmtReading(lr) + " " + t.unit + "</b> · " + lr.date : "No readings yet"}</div>
+          </div>
+          <button class="addbtn" onclick="logReading('${t.k}')">+ Log</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:7px">
+          <span style="font-size:11px;color:var(--faint)">Remind me:</span>
+          <select onchange="setReadingInterval('${t.k}', this.value)" style="font-size:11px;padding:4px 8px;width:auto;background:var(--cardsoft)">
+            ${INTERVAL_OPTS.map(([v,l]) => `<option value="${v}" ${readingPrefs[t.k]===v?"selected":""}>${l}</option>`).join("")}
+          </select>
+        </div>
+        ${hist.length > 1 ? `<details style="margin-top:6px"><summary style="font-size:11px;color:var(--faint);cursor:pointer">History</summary>
+          ${hist.map(h => `<div class="weightrow" style="font-size:12px"><span style="color:var(--muted)">${h.date}</span><span>${fmtReading(h)} ${t.unit}</span></div>`).join("")}
+        </details>` : ""}
+      </div>`;
+    }).join("")}
+    <div style="font-size:11px;color:var(--faint);margin-top:10px;line-height:1.5;border-top:1px solid var(--line);padding-top:9px">Set reminder intervals to whatever your doctor recommends — their advice always overrides these defaults. If a reading is outside your usual range, contact your doctor. These numbers stay on your phone and are never sent to the AI.</div>
+  </div>`;
+}
 let addingTo = null;
 let entryMenu = null;
 let currentTab = "today";
@@ -884,9 +981,10 @@ function localPlan(p){
     whitemeat: "Chicken breast, fish, and eggs are your lean anchors — grilled or curry preparations over fried keeps " + protein + "g easy and clean.",
     meat: "Lean chicken, fish, eggs, and occasional mutton make " + protein + "g straightforward; keep the fried preparations occasional."
   }[p.diet] || "";
-  const plan = {daily_calories: cal, protein_g: protein,
+  const rate = p.goal==="lose" ? -0.45 : p.goal==="build" ? 0.2 : 0;
+  const plan = {daily_calories: cal, protein_g: protein, weekly_rate_kg: rate, medical_note: (p.conditions&&p.conditions.length) ? "Your doctor or dietitian sets your medical plan — ThaliFit only helps with food choices." : "",
     summary: "Targets estimated with the Mifflin-St Jeor formula based on your stats and activity.",
-    suggestions: [
+    habits: [
       p.goal==="lose" ? "A moderate ~450 calorie daily deficit aims for about 0.4 kg (1 lb) per week — sustainable beats fast." :
       p.goal==="build" ? "A small surplus plus " + protein + "g protein daily supports muscle without excess fat gain." :
       "Consistency at maintenance keeps energy steady — protein at each meal helps.",
@@ -898,7 +996,21 @@ function localPlan(p){
 
 // ================= Onboarding =================
 const CUISINES = ["Indian","American","Italian","Mexican","Thai","Chinese","Mediterranean","Japanese","Korean"];
-let ob = {units:"metric", sex:"", activity:"light", goal:"maintain", cuisines:["Indian"], indianStyle:"surprise"};
+const CONDITIONS = [
+  {k:"diabetes_t2", label:"Type 2 diabetes"},
+  {k:"diabetes_t1", label:"Type 1 diabetes"},
+  {k:"prediabetes", label:"Prediabetes"},
+  {k:"bp", label:"High BP"},
+  {k:"cholesterol", label:"High cholesterol"},
+  {k:"pcos", label:"PCOS"},
+  {k:"thyroid", label:"Thyroid"},
+];
+function toggleCondition(c){
+  obReadFields();
+  ob.conditions = (ob.conditions||[]).includes(c) ? ob.conditions.filter(x=>x!==c) : [...(ob.conditions||[]), c];
+  renderOnboard(true);
+}
+let ob = {units:"metric", sex:"", activity:"light", goal:"maintain", cuisines:["Indian"], indianStyle:"surprise", conditions:[]};
 function toggleCuisine(c){
   obReadFields();
   ob.cuisines = (ob.cuisines||[]).includes(c) ? ob.cuisines.filter(x=>x!==c) : [...(ob.cuisines||[]), c];
@@ -907,8 +1019,9 @@ function toggleCuisine(c){
 function openOnboarding(existing){
   if (existing) ob = {units:existing.units, sex:existing.sex, activity:existing.activity, goal:existing.goal,
     age:existing.age, weightKg:existing.weightKg, heightCm:existing.heightCm, steps:existing.steps,
-    name:existing.name||"", diet:existing.diet||"vegetarian", cuisines:existing.cuisines||["Indian"], indianStyle:existing.indianStyle||"surprise"};
-  else ob = {units:"metric", sex:"", activity:"light", goal:"maintain", cuisines:["Indian"], indianStyle:"surprise"};
+    name:existing.name||"", diet:existing.diet||"vegetarian", cuisines:existing.cuisines||["Indian"], indianStyle:existing.indianStyle||"surprise",
+    goalWeightKg:existing.goalWeightKg, conditions:existing.conditions||[]};
+  else ob = {units:"metric", sex:"", activity:"light", goal:"maintain", cuisines:["Indian"], indianStyle:"surprise", conditions:[]};
   renderOnboard(existing);
   document.getElementById("onboard").classList.remove("hide");
 }
@@ -978,11 +1091,20 @@ function renderOnboard(keepVals){
       </select></div>
     <div class="row2">
       <label>Average daily steps<input type="number" id="obSteps" inputmode="numeric" placeholder="e.g. 8000" value="${ob.steps||""}"></label>
-      <label>My goal<select id="obGoal">
+      <label>My goal<select id="obGoal" onchange="obReadFields();renderOnboard(true)">
         <option value="lose" ${ob.goal==="lose"?"selected":""}>Lose weight</option>
         <option value="maintain" ${ob.goal==="maintain"?"selected":""}>Maintain</option>
         <option value="build" ${ob.goal==="build"?"selected":""}>Build muscle</option>
       </select></label>
+    </div>
+    ${ob.goal!=="maintain" ? `<div class="field"><label>Target weight (${metric?"kg":"lb"}) — where do you want to get to?</label>
+      <input type="number" id="obGoalW" inputmode="decimal" value="${ob.goalWeightKg ? (metric ? Math.round(ob.goalWeightKg*10)/10 : Math.round(kgToLb(ob.goalWeightKg)*10)/10) : ""}" placeholder="${metric?"e.g. 70":"e.g. 154"}">
+    </div>` : ""}
+    <div class="field"><label>Any health considerations? (optional, shapes food choices)</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${CONDITIONS.map(c=>`<button type="button" class="cuisine-chip ${(ob.conditions||[]).includes(c.k)?"on":""}" onclick="toggleCondition('${c.k}')">${c.label}</button>`).join("")}
+      </div>
+      <div style="font-size:11px;color:var(--faint);margin-top:6px;line-height:1.4">ThaliFit only adjusts food suggestions. It never gives medical advice — your doctor sets that.</div>
     </div>
     <button class="btn-main" id="obGo" style="width:100%;margin-top:18px" onclick="finishOnboarding()">${AI_ENDPOINT ? "✨ Get my AI plan" : "Set my targets"}</button>
     <div id="obStatus" style="font-size:12px;color:var(--faint);text-align:center;margin-top:8px"></div>
@@ -1001,6 +1123,8 @@ function obReadFields(){
   ob.steps = Number(g("obSteps").value)||0;
   const wv = Number(g("obWeight").value)||undefined;
   ob.weightKg = wv ? (ob.units==="metric" ? wv : lbToKg(wv)) : undefined;
+  const gw = Number(g("obGoalW")?.value)||undefined;
+  ob.goalWeightKg = gw ? (ob.units==="metric" ? gw : lbToKg(gw)) : ob.goalWeightKg;
   if (ob.units==="metric") ob.heightCm = Number(g("obHcm")?.value)||undefined;
   else {
     const ft = Number(g("obHft")?.value)||0, inch = Number(g("obHin")?.value)||0;
@@ -1015,6 +1139,7 @@ async function finishOnboarding(){
   if (goBtn){ goBtn.disabled = true; goBtn.style.opacity = "0.5"; goBtn.textContent = AI_ENDPOINT ? "✨ Building your plan…" : "Calculating…"; }
   st.textContent = AI_ENDPOINT ? "Asking AI to build your plan…" : "Calculating…";
   const p = {units:ob.units, name:ob.name||"", diet:ob.diet||"vegetarian", cuisines:(ob.cuisines&&ob.cuisines.length)?ob.cuisines:["Indian"], indianStyle:ob.indianStyle||"surprise",
+    goalWeightKg: ob.goalWeightKg ? Math.round(ob.goalWeightKg*10)/10 : null, conditions: ob.conditions||[],
     age:ob.age, sex:ob.sex, weightKg:Math.round(ob.weightKg*10)/10,
     heightCm:Math.round(ob.heightCm), activity:ob.activity, steps:ob.steps, goal:ob.goal, created:profile?.created || Date.now()};
   let plan = null;
@@ -1022,12 +1147,15 @@ async function finishOnboarding(){
     try {
       const r = await fetch(AI_ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({type:"plan", profile:{name:p.name||"there", diet:p.diet, cuisines:p.cuisines, indian_style:p.indianStyle, age:p.age, sex:p.sex||"unspecified", weight_kg:p.weightKg, height_cm:p.heightCm,
-          bmi: calcBMI(p.weightKg,p.heightCm), activity:p.activity, avg_daily_steps:p.steps, goal:p.goal}})});
+          bmi: calcBMI(p.weightKg,p.heightCm), activity:p.activity, avg_daily_steps:p.steps, goal:p.goal,
+          goal_weight_kg:p.goalWeightKg, conditions:p.conditions}})});
       const data = await r.json();
       if (r.ok && data.plan) plan = data.plan;
     } catch(e){ /* fall through to local */ }
   }
   if (!plan){ plan = localPlan(p); if (AI_ENDPOINT) plan.summary += " (AI was unreachable, so this used the standard formula — you can re-run from your profile.)"; }
+  plan.created = Date.now();
+  plan.lastCheckin = Date.now();
   p.plan = plan;
   profile = p;
   LS.set("mdp_profile", profile);
@@ -1059,6 +1187,50 @@ function renderProfile(){
   const first = weights.length ? weights[0] : null;
   const delta = (latest && first && weights.length>1) ? Math.round((latest.kg-first.kg)*10)/10 : null;
   const plan = profile.plan || {};
+  const cur = latest ? latest.kg : profile.weightKg;
+  const goalW = profile.goalWeightKg;
+  const startW = first ? first.kg : profile.weightKg;
+  const rate = plan.weekly_rate_kg || 0;
+
+  // Journey maths
+  let journeyHtml = "";
+  if (goalW && profile.goal !== "maintain"){
+    const totalDist = Math.abs(startW - goalW);
+    const done = Math.abs(startW - cur);
+    const pct = totalDist > 0 ? Math.min(100, Math.max(0, (done/totalDist)*100)) : 0;
+    const remaining = Math.round(Math.abs(cur - goalW)*10)/10;
+    const reached = (profile.goal==="lose" && cur <= goalW) || (profile.goal==="build" && cur >= goalW);
+    let eta = "";
+    if (!reached && rate){
+      const weeksLeft = Math.abs(remaining / rate);
+      const d = new Date(); d.setDate(d.getDate() + Math.ceil(weeksLeft*7));
+      eta = d.toLocaleDateString(undefined,{month:"short", day:"numeric", year:"numeric"});
+    }
+    journeyHtml = `<div class="card">
+      <div class="serif" style="font-size:18px">${reached ? "🎉 Goal reached!" : "Your journey"}</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:12px">
+        <span>${fmtW(startW)}</span><span>${fmtW(goalW)}</span>
+      </div>
+      <div style="height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:4px">
+        <div style="height:100%;width:${pct.toFixed(1)}%;background:var(--leaf);transition:width .5s"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:10px">
+        <div><span class="serif" style="font-size:22px">${fmtW(cur)}</span><span style="font-size:11px;color:var(--faint)"> now</span></div>
+        <div style="text-align:right;font-size:12px;color:var(--muted)">
+          ${reached ? "You did it — hold steady." : remaining + (profile.units==="metric"?" kg":" lb") + " to go"}
+          ${eta ? `<br><span style="color:var(--faint)">on pace for ${eta}</span>` : ""}
+        </div>
+      </div>
+      ${delta!==null?`<div style="font-size:12px;color:${(profile.goal==="lose"?delta<=0:delta>=0)?"var(--leaf)":"var(--muted)"};margin-top:8px">${delta>0?"+":""}${profile.units==="metric"?delta+" kg":Math.round(kgToLb(delta)*10)/10+" lb"} since you started</div>`:""}
+    </div>`;
+  }
+
+  // Weekly check-in availability
+  const lastCheck = plan.lastCheckin || plan.created || 0;
+  const daysSince = lastCheck ? Math.floor((Date.now()-lastCheck)/86400000) : 99;
+  const checkinDue = AI_ENDPOINT && plan.daily_calories && daysSince >= 7;
+  const lastResult = profile.lastCheckinResult;
+
   el.innerHTML = `
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -1067,35 +1239,119 @@ function renderProfile(){
       </div>
       <div class="statgrid">
         <div class="stat"><div class="v">${bmi}</div><div class="k">BMI</div></div>
-        <div class="stat"><div class="v" style="font-size:16px;padding-top:5px">${bmiCategory(bmi)}</div><div class="k">Category</div></div>
-        <div class="stat"><div class="v">${fmtW(profile.weightKg).split(" ")[0]}</div><div class="k">${profile.units==="metric"?"kg":"lb"}</div></div>
+        <div class="stat"><div class="v" style="font-size:15px;padding-top:6px">${bmiCategory(bmi)}</div><div class="k">Category</div></div>
+        <div class="stat"><div class="v">${fmtW(cur).split(" ")[0]}</div><div class="k">${profile.units==="metric"?"kg":"lb"}</div></div>
       </div>
       <button class="link" style="margin-top:10px" onclick="document.getElementById('bmiModal').classList.remove('hide')">What does my BMI mean & how to measure it right →</button>
     </div>
 
-    <div class="card">
-      <div class="serif" style="font-size:18px">Your ${AI_ENDPOINT&&plan.summary&&!plan.summary.includes("formula")?"AI ":""}plan</div>
-      <div class="statgrid">
-        <div class="stat"><div class="v">${targets.cal}</div><div class="k">Cal target</div></div>
-        <div class="stat"><div class="v">${targets.protein}g</div><div class="k">Protein target</div></div>
+    ${journeyHtml}
+
+    ${readingsCard()}
+
+    ${checkinDue ? `<div class="card" style="border:1px solid var(--turmeric)">
+      <div class="serif" style="font-size:17px">📋 Weekly check-in ready</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5">It's been ${daysSince} days. Let's look at how the week went and adjust if needed.</div>
+      <button class="btn-main" style="width:100%;margin-top:12px" onclick="runCheckin()">Run my check-in</button>
+    </div>` : ""}
+
+    ${lastResult ? `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="serif" style="font-size:17px">Last check-in</div>
+        <span style="font-size:11px;color:var(--faint)">${new Date(lastResult.at).toLocaleDateString(undefined,{month:"short",day:"numeric"})}</span>
       </div>
-      ${plan.summary?`<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5">${esc(plan.summary)}</div>`:""}
-      ${(plan.suggestions||[]).length?`<div class="tiplist">${plan.suggestions.map(s=>`<div>💡 ${esc(s)}</div>`).join("")}</div>`:""}
-      ${(plan.weight_loss_plan||[]).length?`<div style="font-size:13px;font-weight:600;margin-top:12px;color:var(--turmeric)">Your easy path:</div><div class="tiplist">${plan.weight_loss_plan.map(s=>`<div>✅ ${esc(s)}</div>`).join("")}</div>`:""}
-      ${AI_ENDPOINT?`<button class="btn-ghost" style="margin-top:12px" onclick="openOnboarding(profile)">Re-run AI plan</button>`:""}
+      <div style="font-size:13px;line-height:1.55;margin-top:8px">${esc(lastResult.message)}</div>
+      ${lastResult.focus_habit?`<div style="background:var(--cardsoft);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:13px"><span style="color:var(--turmeric);font-weight:600">This week: </span>${esc(lastResult.focus_habit)}</div>`:""}
+    </div>` : ""}
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="serif" style="font-size:18px">My plan</div>
+        ${AI_ENDPOINT?`<button class="btn-ghost" onclick="openOnboarding(profile)">Re-plan</button>`:""}
+      </div>
+      <div class="statgrid">
+        <div class="stat"><div class="v">${targets.cal}</div><div class="k">Cal / day</div></div>
+        <div class="stat"><div class="v">${targets.protein}g</div><div class="k">Protein</div></div>
+        <div class="stat"><div class="v" style="font-size:16px;padding-top:5px">${rate ? (rate>0?"+":"")+rate+" kg" : "hold"}</div><div class="k">Per week</div></div>
+      </div>
+      ${plan.summary?`<div style="font-size:13px;color:var(--muted);margin-top:12px;line-height:1.55">${esc(plan.summary)}</div>`:""}
+      ${(plan.habits||plan.suggestions||[]).length?`
+        <div style="font-size:12px;font-weight:600;color:var(--turmeric);margin-top:14px;letter-spacing:.04em">YOUR HABITS</div>
+        <div class="tiplist">${(plan.habits||plan.suggestions||[]).map(s=>`<div>✅ ${esc(s)}</div>`).join("")}</div>`:""}
+      ${plan.medical_note?`<div style="font-size:11px;color:var(--faint);margin-top:12px;line-height:1.5;border-top:1px solid var(--line);padding-top:10px">⚕️ ${esc(plan.medical_note)}</div>`:""}
     </div>
 
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div class="serif" style="font-size:18px">Weight tracker</div>
+        <div class="serif" style="font-size:18px">Weight log</div>
         <button class="addbtn" onclick="logWeightPrompt()">+ Log weight</button>
       </div>
-      ${delta!==null?`<div style="font-size:13px;color:${delta<=0?"var(--leaf)":"var(--muted)"};margin-top:8px">${delta>0?"+":""}${profile.units==="metric"?delta+" kg":Math.round(kgToLb(delta)*10)/10+" lb"} since you started</div>`:""}
       <div style="margin-top:8px">
         ${weights.slice(-8).reverse().map(w=>`<div class="weightrow"><span style="color:var(--muted)">${w.date}</span><span>${fmtW(w.kg)}</span></div>`).join("") || '<div class="empty">No entries yet — log your first weigh-in.</div>'}
       </div>
     </div>`;
 }
+
+async function runCheckin(){
+  const el = document.getElementById("profileContent");
+  const plan = profile.plan || {};
+  const latest = weights.length ? weights[weights.length-1] : null;
+  const first = weights.length ? weights[0] : null;
+  if (!latest){ alert("Log a weigh-in first so the check-in has something to look at."); return; }
+
+  // recent 2-week change
+  let recentChange = null;
+  if (weights.length > 1){
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-14);
+    const older = weights.filter(w => new Date(w.date+"T12:00:00") <= cutoff);
+    const base = older.length ? older[older.length-1] : weights[0];
+    recentChange = Math.round((latest.kg - base.kg)*10)/10;
+  }
+  // last 7 days logging
+  let days=0, calSum=0, proSum=0;
+  for (let i=0;i<7;i++){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const t = dayTotals(dayKeyOf(d));
+    if (t && t.cal>0){ days++; calSum+=t.cal; proSum+=t.protein; }
+  }
+  const weeksElapsed = plan.created ? Math.max(1, Math.round((Date.now()-plan.created)/604800000)) : 1;
+
+  const btnHost = el.querySelector(".btn-main");
+  if (btnHost){ btnHost.disabled = true; btnHost.style.opacity = ".5"; btnHost.textContent = "Looking at your week…"; }
+
+  try {
+    const r = await fetch(AI_ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({type:"checkin", progress:{
+        name: profile.name||"there", goal: profile.goal, goal_weight_kg: profile.goalWeightKg,
+        diet: profile.diet, conditions: profile.conditions||[], habits: plan.habits||[],
+        calorie_target: targets.cal, protein_target: targets.protein, weekly_rate_kg: plan.weekly_rate_kg||0,
+        weeks_elapsed: weeksElapsed,
+        start_weight_kg: first?first.kg:profile.weightKg, current_weight_kg: latest.kg,
+        recent_change_kg: recentChange,
+        days_logged_week: days,
+        avg_calories: days?Math.round(calSum/days):null,
+        avg_protein: days?Math.round(proSum/days):null
+      }})});
+    const data = await r.json();
+    if (!r.ok || !data.checkin) throw new Error(data.error||"failed");
+    const c = data.checkin;
+    if (c.adjusted_calories || c.adjusted_protein){
+      targets = {cal: c.adjusted_calories||targets.cal, protein: c.adjusted_protein||targets.protein};
+      LS.set("mdp_targets", targets);
+      profile.plan.daily_calories = targets.cal;
+      profile.plan.protein_g = targets.protein;
+    }
+    profile.plan.lastCheckin = Date.now();
+    profile.lastCheckinResult = {message:c.message, focus_habit:c.focus_habit, status:c.status, at:Date.now()};
+    LS.set("mdp_profile", profile);
+    renderProfile();
+    renderTotals();
+  } catch(e){
+    if (btnHost){ btnHost.disabled = false; btnHost.style.opacity = "1"; btnHost.textContent = "Run my check-in"; }
+    alert("Couldn't reach the coach right now — try again in a bit.");
+  }
+}
+
 function logWeightPrompt(){
   const unit = profile.units==="metric" ? "kg" : "lb";
   const v = prompt("Today's weight (" + unit + "):");
@@ -1223,7 +1479,7 @@ function renderPlanCard(){
   if (!cached){
     el.innerHTML = `<div class="card" style="padding:14px;display:flex;justify-content:space-between;align-items:center;gap:10px">
       <div><div class="serif" style="font-size:16px">✨ Today's meal plan</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:2px">Built for your ${targets.cal} cal / ${targets.protein}g protein goal</div></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">Dishes for your plan: ${targets.cal} cal · ${targets.protein}g protein <span style="color:var(--faint)">(set in Profile)</span></div></div>
       <button class="btn-main" onclick="getMealPlan(false)" style="flex-shrink:0">Plan my day</button></div>`;
     return;
   }
@@ -1264,7 +1520,8 @@ async function getMealPlan(force){
         name: profile.name || "there", diet: profile.diet || "vegetarian",
         cuisines: (profile.cuisines && profile.cuisines.length) ? profile.cuisines : ["Indian"],
         indian_style: profile.indianStyle || "surprise",
-        goal: profile.goal,
+        habits: (profile.plan && profile.plan.habits) || [],
+        conditions: profile.conditions || [],
         calorie_target: targets.cal, protein_target: targets.protein,
         avoid: history.slice(-40), seed: Math.floor(Math.random()*100000)
       }})});
