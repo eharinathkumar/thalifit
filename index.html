@@ -1656,6 +1656,15 @@ function renderPlanCard(){
 }
 async function getMealPlan(force){
   const el = document.getElementById("planCard");
+  if (force){
+    const gens = LS.get("mdp_plangens_" + dateKey, 0);
+    if (gens >= 2){
+      const bar = el.querySelector(".btn-ghost");
+      if (bar){ bar.textContent = "Fresh ideas tomorrow ✨"; bar.disabled = true; bar.style.opacity = ".55"; setTimeout(renderPlanCard, 2500); }
+      return;
+    }
+    LS.set("mdp_plangens_" + dateKey, gens + 1);
+  }
   el.innerHTML = `<div class="card" style="padding:16px;text-align:center"><div style="font-size:13px;color:var(--muted)">✨ Cooking up your plan…</div></div>`;
   try {
     const history = LS.get("mdp_planhistory", []);
