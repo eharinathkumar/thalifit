@@ -880,6 +880,19 @@ function setReadingInterval(k, v){
 function enableReadings(){
   profile.trackReadings = true;
   LS.set("mdp_profile", profile);
+  readingsCollapsed = false;
+  LS.set("mdp_readings_collapsed", false);
+  renderProfile();
+}
+function disableReadings(){
+  profile.trackReadings = false;
+  LS.set("mdp_profile", profile);
+  renderProfile();
+}
+let readingsCollapsed = LS.get("mdp_readings_collapsed", false);
+function toggleReadingsCard(){
+  readingsCollapsed = !readingsCollapsed;
+  LS.set("mdp_readings_collapsed", readingsCollapsed);
   renderProfile();
 }
 function readingsCard(){
@@ -889,8 +902,17 @@ function readingsCard(){
   const types = relevantReadingTypes();
   if (!types.length) return "";
   const anyDue = types.some(t => readingDue(t.k));
+  if (readingsCollapsed){
+    return `<div class="card" style="padding:13px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div style="font-size:14px" class="serif">Health readings ${anyDue ? '<span style="font-size:10px;background:var(--turmeric);color:#1a1508;border-radius:8px;padding:1px 7px;font-weight:700;vertical-align:1px">DUE</span>' : ""}</div>
+      <button class="btn-ghost" onclick="toggleReadingsCard()">Show</button>
+    </div>`;
+  }
   return `<div class="card">
-    <div class="serif" style="font-size:18px">Health readings</div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="serif" style="font-size:18px">Health readings</div>
+      <button class="btn-ghost" onclick="toggleReadingsCard()">Hide</button>
+    </div>
     ${anyDue ? `<div style="font-size:12px;color:var(--turmeric);margin-top:4px">A reading looks due — a quick log keeps your record ready for your next appointment.</div>` : ""}
     ${types.map(t => {
       const lr = lastReading(t.k);
@@ -916,6 +938,7 @@ function readingsCard(){
       </div>`;
     }).join("")}
     <div style="font-size:11px;color:var(--faint);margin-top:10px;line-height:1.5;border-top:1px solid var(--line);padding-top:9px">Set reminder intervals to whatever your doctor recommends — their advice always overrides these defaults. If a reading is outside your usual range, contact your doctor. These numbers stay on your phone and are never sent to the AI.</div>
+    ${profile.trackReadings ? `<button class="link" style="margin-top:8px;color:var(--faint)" onclick="disableReadings()">Stop tracking readings</button>` : ""}
   </div>`;
 }
 let addingTo = null;
