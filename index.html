@@ -226,6 +226,21 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
   </div>
 </div>
 
+<!-- Barcode scanner overlay -->
+<div id="scanOverlay" class="hide" style="position:fixed;inset:0;z-index:400;background:#000;display:flex;flex-direction:column">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:rgba(0,0,0,.7);position:relative;z-index:2">
+    <div style="color:#F1EDE2;font-weight:600;font-size:15px">Scan a barcode</div>
+    <button onclick="closeScanner()" style="background:none;color:#9A9C8B;font-size:22px;padding:2px 8px">✕</button>
+  </div>
+  <div style="flex:1;position:relative;overflow:hidden">
+    <video id="scanVideo" autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+      <div style="width:78%;max-width:340px;height:130px;border:2.5px solid #E9A03B;border-radius:14px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)"></div>
+    </div>
+    <div id="scanStatus" style="position:absolute;left:0;right:0;bottom:22px;text-align:center;color:#F1EDE2;font-size:13px;text-shadow:0 1px 4px #000">Point at the barcode on the package</div>
+  </div>
+</div>
+
 <!-- Day detail sheet -->
 <div id="dayModal" class="overlay hide" onclick="if(event.target===this)this.classList.add('hide')">
   <div class="sheet" id="dayModalContent"></div>
@@ -761,6 +776,112 @@ function estimateMacros(name, cal, protein){
   const fat = Math.round((rem*fatShare)/9);
   const carbs = Math.max(0, Math.round((rem - fat*9)/4));
   return {carbs, fat};
+}
+
+// ================= Barcode scanner (Android Chrome BarcodeDetector) =================
+const SCAN_SUPPORTED = "BarcodeDetector" in window;
+let scanStream = null, scanRAF = null, scanBusy = false, scanMeal = null;
+
+async function openScanner(meal){
+  scanMeal = meal;
+  const overlay = document.getElementById("scanOverlay");
+  const video = document.getElementById("scanVideo");
+  const status = document.getElementById("scanStatus");
+  overlay.classList.remove("hide");
+  status.textContent = "Point at the barcode on the package";
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}, audio:false});
+    video.srcObject = scanStream;
+    const detector = new BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e","code_128"]});
+    scanBusy = false;
+    const tick = async () => {
+      if (!scanStream) return;
+      if (!scanBusy && video.readyState === 4){
+        scanBusy = true;
+        try {
+          const codes = await detector.detect(video);
+          if (codes.length){
+            const code = codes[0].rawValue;
+            status.textContent = "Found " + code + " — looking it up…";
+            await barcodeLookup(code);
+            return;
+          }
+        } catch(e){}
+        scanBusy = false;
+      }
+      scanRAF = requestAnimationFrame(tick);
+    };
+    scanRAF = requestAnimationFrame(tick);
+  } catch(e){
+    status.textContent = "Camera unavailable — check camera permission for this app.";
+  }
+}
+function closeScanner(){
+  if (scanRAF) cancelAnimationFrame(scanRAF);
+  scanRAF = null;
+  if (scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream = null; }
+  document.getElementById("scanOverlay").classList.add("hide");
+}
+async function barcodeLookup(code){
+  const status = document.getElementById("scanStatus");
+  try {
+    const r = await fetch("https://world.openfoodfacts.org/api/v2/product/" + encodeURIComponent(code) + ".json?fields=product_name,brands,nutriments,serving_size");
+    const data = await r.json();
+    if (!data || data.status !== 1 || !data.product) throw new Error("not found");
+    const prod = data.product;
+    const n = prod.nutriments || {};
+    // Prefer per-serving; fall back to per-100g
+    const perServing = n["energy-kcal_serving"] != null;
+    const cal = Math.round(perServing ? n["energy-kcal_serving"] : (n["energy-kcal_100g"] || 0));
+    const pro = Math.round((perServing ? n["proteins_serving"] : n["proteins_100g"]) || 0);
+    const carbs = Math.round((perServing ? n["carbohydrates_serving"] : n["carbohydrates_100g"]) || 0);
+    const fat = Math.round((perServing ? n["fat_serving"] : n["fat_100g"]) || 0);
+    if (!cal) throw new Error("no nutrition data");
+    const brand = (prod.brands || "").split(",")[0].trim();
+    const base = (brand ? brand + " " : "") + (prod.product_name || "Scanned item");
+    const portion = perServing ? (prod.serving_size ? "1 serving, " + prod.serving_size : "1 serving") : "per 100 g";
+    const name = (base + " (" + portion + ")").slice(0, 100);
+    closeScanner();
+    // Save to personal library (skip dup) and log it
+    let f = foods.find(x => x.name === name);
+    if (!f){
+      f = {id:uid(), name, cal, protein:pro, carbs, fat, meal:scanMeal};
+      foods.push(f);
+      LS.set("mdp_foods", foods);
+    }
+    addEntry(name, cal, pro, scanMeal, carbs, fat);
+    renderMeals();
+  } catch(e){
+    status.textContent = "Not in the product database — close and use ✨ Ask AI or manual entry instead.";
+    scanBusy = false;
+    scanRAF = requestAnimationFrame(async function retry(){
+      scanBusy = false;
+      const video = document.getElementById("scanVideo");
+      if (scanStream) openScannerLoop(video);
+    });
+  }
+}
+function openScannerLoop(video){
+  // resume detection after a failed lookup
+  const detector = new BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e","code_128"]});
+  const status = document.getElementById("scanStatus");
+  const tick = async () => {
+    if (!scanStream) return;
+    if (!scanBusy && video.readyState === 4){
+      scanBusy = true;
+      try {
+        const codes = await detector.detect(video);
+        if (codes.length){
+          status.textContent = "Found " + codes[0].rawValue + " — looking it up…";
+          await barcodeLookup(codes[0].rawValue);
+          return;
+        }
+      } catch(e){}
+      scanBusy = false;
+    }
+    scanRAF = requestAnimationFrame(tick);
+  };
+  scanRAF = requestAnimationFrame(tick);
 }
 
 let dateKey = todayKey();
@@ -1632,7 +1753,7 @@ function renderMeals(){
   const root = document.getElementById("meals");
   root.innerHTML = MEALS.map(meal => {
     const entries = log.filter(e=>e.meal===meal);
-    const mealCal = entries.reduce((s,e)=>s+e.cal,0);
+    const mealCal = Math.round(entries.reduce((s,e)=>s+e.cal*(e.qty||1),0));
     const open = addingTo === meal;
     return `<div class="meal">
       <div class="meal-hd">
@@ -1643,8 +1764,9 @@ function renderMeals(){
         </div>
         <button class="addbtn ${open?'open':''}" onclick="toggleAdd('${meal}')">${open ? "Close" : "+ Add"}</button>
       </div>
+      ${open ? addPanel(meal) : ""}
       ${!entries.length && !open ? '<div class="empty">Nothing logged yet.</div>' : ""}
-      ${entries.map(e=>{const eq=e.qty||1;return `<div class="entry">
+      ${entries.slice().sort((a,b)=>(a.ts||0)-(b.ts||0)).map(e=>{const eq=e.qty||1;return `<div class="entry">
         <div style="flex:1;min-width:0;cursor:pointer" onclick="toggleEntryMenu('${e.id}')"><div class="nm">${esc(e.name)}</div>
         <div class="meta">${Math.round(e.cal*eq)} cal · ${Math.round(e.protein*eq)}g P · ${Math.round((e.carbs||0)*eq)}g C · ${Math.round((e.fat||0)*eq)}g F</div></div>
         <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
@@ -1654,7 +1776,6 @@ function renderMeals(){
         </div>
         <button class="x" onclick="removeEntry('${e.id}')" aria-label="Remove">✕</button>
       </div>${entryMenu===e.id?`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:-2px 2px 10px;padding-left:2px"><span style="font-size:11px;color:var(--faint)">Move to:</span>${MEALS.filter(m=>m!==e.meal).map(m=>`<button class="cuisine-chip" onclick="moveEntry('${e.id}','${m}')">${m}</button>`).join("")}</div>`:""}`}).join("")}
-      ${open ? addPanel(meal) : ""}
     </div>`;
   }).join("");
   if (addingTo) {
@@ -1665,7 +1786,10 @@ function renderMeals(){
 }
 function addPanel(meal){
   return `<div class="panel">
-    <input id="searchInput" placeholder="Search foods… (e.g. dosa, biryani, Big Mac)" autocomplete="off">
+    <div style="display:flex;gap:8px">
+      <input id="searchInput" placeholder="Search foods… (e.g. dosa, biryani, Big Mac)" autocomplete="off" style="flex:1">
+      ${SCAN_SUPPORTED ? `<button onclick="openScanner('${meal}')" title="Scan a barcode" style="background:var(--cardsoft);color:var(--turmeric);width:44px;flex-shrink:0;font-size:19px;border-radius:10px;border:1px solid var(--line)">📷</button>` : ""}
+    </div>
     <div class="results" id="results"></div>
     <div class="manual">
       <div class="lbl">Not found? Add it manually:</div>
