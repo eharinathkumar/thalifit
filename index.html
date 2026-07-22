@@ -1160,6 +1160,10 @@ function toggleCuisine(c){
   ob.cuisines = (ob.cuisines||[]).includes(c) ? ob.cuisines.filter(x=>x!==c) : [...(ob.cuisines||[]), c];
   renderOnboard(true);
 }
+function closeOnboarding(){
+  document.getElementById("onboard").classList.add("hide");
+  renderProfile();
+}
 function openOnboarding(existing){
   if (existing) ob = {units:existing.units, sex:existing.sex, activity:existing.activity, goal:existing.goal,
     age:existing.age, weightKg:existing.weightKg, heightCm:existing.heightCm, steps:existing.steps,
@@ -1176,7 +1180,10 @@ function renderOnboard(keepVals){
   const hcm = ob.heightCm || "";
   const fi = ob.heightCm ? cmToFtIn(ob.heightCm) : {ft:"",inch:""};
   document.getElementById("onboardSheet").innerHTML = `
-    <h3>${profile? "Update your profile" : "Welcome to ThaliFit!"}</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h3 style="margin:0">${profile? "Update your profile" : "Welcome to ThaliFit!"}</h3>
+      ${profile?`<button onclick="closeOnboarding()" title="Close without saving" style="background:none;color:var(--faint);font-size:22px;padding:2px 6px;flex-shrink:0">✕</button>`:""}
+    </div>
     <div class="sub">A few details so we can set the right daily targets for you. Stored only on this phone.</div>
     <div class="field"><label>Units</label>
       <div class="seg">
@@ -1250,7 +1257,8 @@ function renderOnboard(keepVals){
       </div>
       <div style="font-size:11px;color:var(--faint);margin-top:6px;line-height:1.4">ThaliFit only adjusts food suggestions. It never gives medical advice — your doctor sets that.</div>
     </div>
-    <button class="btn-main" id="obGo" style="width:100%;margin-top:18px" onclick="finishOnboarding()">${AI_ENDPOINT ? "✨ Get my AI plan" : "Set my targets"}</button>
+    ${profile?`<button class="btn-ghost" style="width:100%;margin-top:10px" onclick="closeOnboarding()">Cancel</button>`:""}
+    <button class="btn-main" id="obGo" style="width:100%;margin-top:${profile?"8px":"18px"}" onclick="finishOnboarding()">${AI_ENDPOINT ? "✨ Get my AI plan" : "Set my targets"}</button>
     <div id="obStatus" style="font-size:12px;color:var(--faint);text-align:center;margin-top:8px"></div>
     ${profile ? "" : '<button class="link" style="display:block;margin:12px auto 0" onclick="document.getElementById(\'onboard\').classList.add(\'hide\')">Skip for now</button>'}
   `;
