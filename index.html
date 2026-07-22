@@ -1119,15 +1119,16 @@ function localPlan(p){
   const proPerKg = p.goal==="build" ? 1.8 : p.goal==="lose" ? 1.6 : 1.2;
   const protein = Math.round(p.weightKg * proPerKg);
   const dietTip = {
-    vegan: "Vegan protein anchors: dal, chana, rajma, tofu, soya chunks, and a plant protein powder make " + protein + "g realistic.",
-    vegetarian: "Vegetarian protein anchors: paneer, Greek yogurt, dal, soya chunks, and a protein powder scoop or two.",
-    eggitarian: "Eggs are your easiest protein — 2-3 a day plus dal, paneer and yogurt covers most of your " + protein + "g.",
-    whitemeat: "Chicken breast, fish, and eggs are your lean anchors — grilled or curry preparations over fried keeps " + protein + "g easy and clean.",
-    meat: "Lean chicken, fish, eggs, and occasional mutton make " + protein + "g straightforward; keep the fried preparations occasional."
+    vegan: "Plant protein at every meal — legumes, beans, lentils, tofu, soy, and a plant protein powder make " + protein + "g realistic.",
+    vegetarian: "Protein at every meal — dairy (yogurt, cheese), legumes, beans, lentils, and a protein powder scoop or two cover " + protein + "g.",
+    eggitarian: "Eggs are your easiest protein — 2-3 a day plus dairy and legumes covers most of your " + protein + "g.",
+    whitemeat: "Chicken breast, fish, and eggs are your lean anchors — grilled over fried keeps " + protein + "g easy and clean.",
+    meat: "Lean poultry, fish, eggs, and occasional red meat make " + protein + "g straightforward; keep fried preparations occasional."
   }[p.diet] || "";
   const rate = p.goal==="lose" ? -0.45 : p.goal==="build" ? 0.2 : 0;
   const plan = {daily_calories: cal, protein_g: protein, weekly_rate_kg: rate, medical_note: (p.conditions&&p.conditions.length) ? "Your doctor or dietitian sets your medical plan — ThaliFit only helps with food choices." : "",
-    summary: "Targets estimated with the Mifflin-St Jeor formula based on your stats and activity.",
+    source: "local",
+    summary: "Targets estimated with the standard Mifflin-St Jeor formula based on your stats and activity.",
     habits: [
       p.goal==="lose" ? "A moderate ~450 calorie daily deficit aims for about 0.4 kg (1 lb) per week — sustainable beats fast." :
       p.goal==="build" ? "A small surplus plus " + protein + "g protein daily supports muscle without excess fat gain." :
@@ -1426,6 +1427,7 @@ function renderProfile(){
         <div class="stat"><div class="v">${targets.protein}g</div><div class="k">Protein</div></div>
         <div class="stat"><div class="v" style="font-size:16px;padding-top:5px">${rate ? (rate>0?"+":"")+rate+" kg" : "hold"}</div><div class="k">Per week</div></div>
       </div>
+      ${plan.source==="local"?`<div style="font-size:11px;color:var(--turmeric);margin-top:10px;background:var(--cardsoft);border-radius:8px;padding:8px 10px;line-height:1.5">⚠️ Built offline with standard formulas — the AI coach couldn't be reached. Tap Re-plan when you're online for your personalized plan.</div>`:""}
       ${plan.summary?`<div style="font-size:13px;color:var(--muted);margin-top:12px;line-height:1.55">${esc(plan.summary)}</div>`:""}
       ${(plan.habits||plan.suggestions||[]).length?`
         <div style="font-size:12px;font-weight:600;color:var(--turmeric);margin-top:14px;letter-spacing:.04em">YOUR HABITS</div>
