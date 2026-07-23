@@ -1309,6 +1309,7 @@ async function finishOnboarding(){
   if (!plan){ plan = localPlan(p); if (AI_ENDPOINT) plan.summary += " (AI was unreachable, so this used the standard formula — you can re-run from your profile.)"; }
   plan.created = Date.now();
   plan.lastCheckin = Date.now();
+  plan.startWeightKg = p.weightKg;
   p.plan = plan;
   profile = p;
   LS.set("mdp_profile", profile);
@@ -1338,11 +1339,12 @@ function renderProfile(){
   const bmi = calcBMI(profile.weightKg, profile.heightCm);
   const latest = weights.length ? weights[weights.length-1] : null;
   const first = weights.length ? weights[0] : null;
-  const delta = (latest && first && weights.length>1) ? Math.round((latest.kg-first.kg)*10)/10 : null;
   const plan = profile.plan || {};
+  const deltaAnchor = plan.startWeightKg != null ? plan.startWeightKg : (first && weights.length>1 ? first.kg : null);
+  const delta = (latest && deltaAnchor != null) ? Math.round((latest.kg-deltaAnchor)*10)/10 : null;
   const cur = latest ? latest.kg : profile.weightKg;
   const goalW = profile.goalWeightKg;
-  const startW = first ? first.kg : profile.weightKg;
+  const startW = plan.startWeightKg != null ? plan.startWeightKg : (first ? first.kg : profile.weightKg);
   const rate = plan.weekly_rate_kg || 0;
 
   // Journey maths
@@ -1484,7 +1486,7 @@ async function runCheckin(){
         coach_notes: plan.coach_notes || "",
         calorie_target: targets.cal, protein_target: targets.protein, weekly_rate_kg: plan.weekly_rate_kg||0,
         weeks_elapsed: weeksElapsed,
-        start_weight_kg: first?first.kg:profile.weightKg, current_weight_kg: latest.kg,
+        start_weight_kg: (profile.plan && profile.plan.startWeightKg != null) ? profile.plan.startWeightKg : (first?first.kg:profile.weightKg), current_weight_kg: latest.kg,
         recent_change_kg: recentChange,
         days_logged_week: days,
         avg_calories: days?Math.round(calSum/days):null,
