@@ -1310,6 +1310,14 @@ async function finishOnboarding(){
   plan.created = Date.now();
   plan.lastCheckin = Date.now();
   plan.startWeightKg = p.weightKg;
+  // Treat the entered weight as today's weigh-in so the journey and log agree
+  {
+    const wk = todayKey();
+    const wi = weights.findIndex(w => w.date === wk);
+    if (wi >= 0) weights[wi].kg = p.weightKg;
+    else weights.push({date: wk, kg: p.weightKg});
+    LS.set("mdp_weights", weights);
+  }
   p.plan = plan;
   profile = p;
   LS.set("mdp_profile", profile);
