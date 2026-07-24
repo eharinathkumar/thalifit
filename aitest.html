@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ThaliFit — AI provider test bench</title>
+<style>
+:root{--bg:#14170F;--card:#1E2318;--soft:#262C1E;--line:#31392A;--text:#F1EDE2;--muted:#9A9C8B;--faint:#6C7060;--turmeric:#E9A03B;--leaf:#9BBF6A;--chili:#C96A3B}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5;padding:18px;max-width:900px;margin:0 auto}
+h1{font-size:20px;margin-bottom:4px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+label{display:block;font-size:12px;color:var(--muted);margin:12px 0 4px}
+input,select{width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+button{background:var(--turmeric);color:#1a1508;border:none;border-radius:8px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer}
+button.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+button:disabled{opacity:.5;cursor:default}
+.test{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px}
+.thead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.tname{font-weight:600;font-size:14.5px}
+.badge{font-size:11px;font-weight:700;border-radius:20px;padding:3px 10px;letter-spacing:.03em}
+.b-idle{background:var(--soft);color:var(--faint)}
+.b-run{background:var(--soft);color:var(--turmeric)}
+.b-ok{background:rgba(155,191,106,.16);color:var(--leaf)}
+.b-fail{background:rgba(201,106,59,.18);color:var(--chili)}
+.meta{font-size:11.5px;color:var(--faint);margin-top:5px;font-family:ui-monospace,monospace}
+pre{background:#0F1310;border:1px solid var(--line);border-radius:8px;padding:10px;margin-top:9px;font-size:11.5px;white-space:pre-wrap;word-break:break-word;max-height:230px;overflow:auto;color:var(--muted);font-family:ui-monospace,monospace}
+.checks{margin-top:8px;font-size:12.5px}
+.checks div{padding:2px 0}
+.ok{color:var(--leaf)}.bad{color:var(--chili)}
+.summary{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:16px;font-size:13.5px;display:none}
+</style>
+</head>
+<body>
+
+<h1>AI provider test bench</h1>
+<div class="sub">Runs all four modes against a worker and checks the shape of what comes back. Serve this from your app's origin so CORS passes.</div>
+
+<label>Worker URL</label>
+<input id="url" value="https://thalifit-ai-test.harinathkumar.workers.dev">
+
+<label>Test persona (deliberately non-Indian, with health conditions — the contamination trap)</label>
+<select id="persona">
+  <option value="trap">American + Italian · vegetarian · type 2 diabetes + cholesterol · imperial</option>
+  <option value="indian">Indian (South) · vegetarian · no conditions · metric</option>
+  <option value="recomp">Recomposition · build muscle but lower target weight · imperial</option>
+</select>
+
+<div class="row">
+  <button id="run">Run all tests</button>
+  <button class="ghost" id="who">Who am I?</button>
+</div>
+
+<div id="out"></div>
+<div class="summary" id="sum"></div>
+
+<script>
+const PERSONAS = {
+  trap: {
+    name:"Test", diet:"vegetarian", cuisines:["American","Italian"], indian_style:"surprise",
+    age:45, sex:"male", weight_kg:80, height_cm:175, bmi:26, activity:"light",
+    avg_daily_steps:8000, goal:"lose", goal_weight_kg:73, conditions:["diabetes_t2","cholesterol"], units:"imperial"
+  },
+  indian: {
+    name:"Test", diet:"vegetarian", cuisines:["Indian"], indian_style:"south",
+    age:45, sex:"female", weight_kg:68, height_cm:160, bmi:26.6, activity:"moderate",
+    avg_daily_steps:10000, goal:"lose", goal_weight_kg:62, conditions:[], units:"metric"
+  },
+  recomp: {
+    name:"Test", diet:"meat", cuisines:["American"], indian_style:"surprise",
+    age:45, sex:"male", weight_kg:75, height_cm:178, bmi:23.7, activity:"active",
+    avg_daily_steps:10000, goal:"build", goal_weight_kg:72.5, conditions:[], units:"imperial"
+  }
+};
+
+const INDIAN_WORDS = ["dal","daal","sambar","rajma","paneer","dosa","idli","roti","chapati","chapatti","masala","kuzhambu","poriyal","upma","khichdi","chana","biryani","curd rice","papad","ghee"];
+
+function el(id){ return document.getElementById(id); }
+
+function card(id, name){
+  const d = document.createElement("div");
+  d.className = "test"; d.id = "t-"+id;
+  d.innerHTML = `<div class="thead"><div class="tname">${name}</div><span class="badge b-idle" id="b-${id}">idle</span></div>
+    <div class="meta" id="m-${id}"></div><div class="checks" id="c-${id}"></div><pre id="p-${id}" style="display:none"></pre>`;
+  el("out").appendChild(d);
+}
+
+function setBadge(id, state, text){
+  const b = el("b-"+id);
+  b.className = "badge b-" + state;
+  b.textContent = text;
+}
+function setChecks(id, checks){
+  el("c-"+id).innerHTML = checks.map(c =>
+    `<div class="${c.pass?"ok":"bad"}">${c.pass?"✓":"✕"} ${c.label}</div>`).join("");
+}
+function setBody(id, obj){
+  const p = el("p-"+id);
+  p.style.display = "block";
+  p.textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+}
+
+function findIndian(text){
+  const t = (text||"").toLowerCase();
+  return INDIAN_WORDS.filter(w => t.includes(w));
+}
+
+async function call(payload){
+  const t0 = performance.now();
+  const r = await fetch(el("url").value.trim(), {
+    method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload)
+  });
+  const data = await r.json();
+  return { ms: Math.round(performance.now()-t0), ok: r.ok, status: r.status, data };
+}
+
+async function runTest(id, name, payload, validate){
+  setBadge(id, "run", "running…");
+  el("m-"+id).textContent = "";
+  try {
+    const res = await call(payload);
+    el("m-"+id).textContent = res.ms + " ms · HTTP " + res.status;
+    if (!res.ok) {
+      setBadge(id, "fail", "FAIL");
+      setChecks(id, [{pass:false, label:"HTTP " + res.status + " — " + (res.data.error||"error")}]);
+      setBody(id, res.data);
+      return false;
+    }
+    const checks = validate(res.data);
+    const pass = checks.every(c => c.pass);
+    setBadge(id, pass?"ok":"fail", pass?"PASS":"FAIL");
+    setChecks(id, checks);
+    setBody(id, res.data);
+    return pass;
+  } catch(e){
+    setBadge(id, "fail", "FAIL");
+    setChecks(id, [{pass:false, label:String(e)}]);
+    return false;
+  }
+}
+
+el("who").onclick = async () => {
+  el("out").innerHTML = ""; el("sum").style.display = "none";
+  card("who","Provider identity");
+  await runTest("who","Provider identity",{type:"whoami"}, d => ([
+    {pass: !!d.provider, label: "provider: " + (d.provider||"?")},
+    {pass: !!d.keyPresent, label: d.keyPresent ? "API key secret present" : "API key secret MISSING"},
+    {pass: !!(d.models&&d.models.best), label: "models: " + JSON.stringify(d.models||{})}
+  ]));
+};
+
+el("run").onclick = async () => {
+  el("run").disabled = true;
+  el("out").innerHTML = ""; el("sum").style.display = "none";
+  const p = PERSONAS[el("persona").value];
+  const isIndian = p.cuisines.includes("Indian");
+  const results = [];
+
+  ["who","parse","plan","mealplan","checkin"].forEach((id,i) =>
+    card(id, ["0 · Provider identity","1 · Meal parsing (fast tier)","2 · Journey plan (best tier)","3 · Daily meal plan (smart tier)","4 · Weekly check-in (best tier)"][i]));
+
+  results.push(await runTest("who","who",{type:"whoami"}, d => ([
+    {pass: !!d.provider, label: "provider: " + (d.provider||"?")},
+    {pass: !!d.keyPresent, label: d.keyPresent ? "key secret present" : "key secret MISSING"},
+    {pass: true, label: "models: " + JSON.stringify(d.models||{})}
+  ])));
+
+  // 1. PARSE
+  results.push(await runTest("parse","parse",
+    {text:"2 dosas with podi, a mango smoothie and a filter coffee"}, d => {
+      const items = d.items||[];
+      const drink = items.find(i => /smoothie|coffee/i.test(i.name)) || {};
+      return [
+        {pass: Array.isArray(items) && items.length>0, label: "returned " + items.length + " items"},
+        {pass: items.every(i => typeof i.calories==="number" && typeof i.protein_g==="number"), label:"all items have numeric calories + protein"},
+        {pass: items.every(i => i.carbs_g!=null && i.fat_g!=null), label:"carbs and fat present"},
+        {pass: !/\d+\s*g\b/i.test(drink.name||""), label:"drinks not measured in grams (" + (drink.name||"n/a") + ")"}
+      ];
+    }));
+
+  // 2. PLAN
+  let planOut = null;
+  results.push(await runTest("plan","plan",{type:"plan", profile:p}, d => {
+    const pl = d.plan||{}; planOut = pl;
+    const text = (pl.summary||"") + " " + (pl.habits||[]).join(" ");
+    const leaks = isIndian ? [] : findIndian(text);
+    const rateOk = p.goal==="build" && p.goal_weight_kg < p.weight_kg
+      ? (pl.weekly_rate_kg < 0)
+      : p.goal==="lose" ? (pl.weekly_rate_kg < 0) : true;
+    return [
+      {pass: pl.daily_calories>=1400, label:"calories " + pl.daily_calories + " (floor 1400)"},
+      {pass: pl.protein_g>0, label:"protein " + pl.protein_g + "g"},
+      {pass: (pl.habits||[]).length>=3, label:(pl.habits||[]).length + " habits returned"},
+      {pass: !!pl.coach_notes, label:"coach_notes written (" + ((pl.coach_notes||"").split(/\s+/).length) + " words)"},
+      {pass: rateOk, label:"weekly rate " + pl.weekly_rate_kg + " kg points the right way"},
+      {pass: leaks.length===0, label: leaks.length ? "CUISINE LEAK: " + leaks.join(", ") : "no Indian foods leaked into non-Indian plan"},
+      {pass: !/insulin|medication|dose|dosage|mg\b/i.test(text), label:"no medication/dosing language"}
+    ];
+  }));
+
+  // 3. MEALPLAN
+  results.push(await runTest("mealplan","mealplan",{type:"mealplan", profile:{
+      diet:p.diet, cuisines:p.cuisines, indian_style:p.indian_style,
+      habits:(planOut&&planOut.habits)||[], conditions:p.conditions,
+      calorie_target:(planOut&&planOut.daily_calories)||2000,
+      protein_target:(planOut&&planOut.protein_g)||120, avoid:[], seed:Math.random()
+    }}, d => {
+      const mp = d.mealplan||{};
+      const meals = mp.plan||[];
+      const all = meals.flatMap(m => m.items||[]);
+      const text = all.map(i=>i.name).join(" ") + " " + (mp.note||"");
+      const leaks = isIndian ? [] : findIndian(text);
+      const total = all.reduce((s,i)=>s+(i.calories||0),0);
+      const target = (planOut&&planOut.daily_calories)||2000;
+      return [
+        {pass: meals.length>=3, label: meals.length + " meal slots"},
+        {pass: all.length>0, label: all.length + " dishes total"},
+        {pass: Math.abs(total-target)/target < 0.2, label:"day total " + total + " cal vs target " + target},
+        {pass: leaks.length===0, label: leaks.length ? "CUISINE LEAK: " + leaks.join(", ") : "dishes stayed inside chosen cuisines"}
+      ];
+    }));
+
+  // 4. CHECKIN
+  results.push(await runTest("checkin","checkin",{type:"checkin", progress:{
+      name:p.name, goal:p.goal, goal_weight_kg:p.goal_weight_kg, units:p.units,
+      diet:p.diet, conditions:p.conditions, habits:(planOut&&planOut.habits)||[],
+      coach_notes:(planOut&&planOut.coach_notes)||"",
+      calorie_target:(planOut&&planOut.daily_calories)||2000,
+      protein_target:(planOut&&planOut.protein_g)||120,
+      weekly_rate_kg:(planOut&&planOut.weekly_rate_kg)||-0.4,
+      weeks_elapsed:3, start_weight_kg:p.weight_kg, current_weight_kg:p.weight_kg-1.2,
+      recent_change_kg:-0.5, days_logged_week:5, avg_calories:1950, avg_protein:110
+    }}, d => {
+      const c = d.checkin||{};
+      const valid = ["ahead","on_track","behind","stalled","no_data"];
+      const capOk = c.adjusted_calories==null ||
+        Math.abs(c.adjusted_calories - ((planOut&&planOut.daily_calories)||2000)) <= 150;
+      return [
+        {pass: valid.includes(c.status), label:"status: " + c.status},
+        {pass: !!c.message, label:"message returned"},
+        {pass: !!c.focus_habit, label:"focus habit: " + (c.focus_habit||"").slice(0,50)},
+        {pass: !!c.updated_coach_notes, label:"coach notes revised"},
+        {pass: capOk, label:"calorie adjustment within ±150"},
+        {pass: c.adjusted_calories==null || c.adjusted_calories>=1400, label:"never below 1400 floor"},
+        {pass: !/insulin|medication|dosage/i.test((c.message||"")+(c.focus_habit||"")), label:"no medication language"}
+      ];
+    }));
+
+  const passed = results.filter(Boolean).length;
+  const s = el("sum");
+  s.style.display = "block";
+  s.innerHTML = `<b>${passed} of ${results.length} passed.</b> ` +
+    (passed===results.length
+      ? "This provider is safe to flip to."
+      : "Check the failures above before flipping production to this provider.");
+  el("run").disabled = false;
+};
+</script>
+</body>
+</html>
