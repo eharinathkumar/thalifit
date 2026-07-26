@@ -1668,6 +1668,7 @@ function renderPlanCard(){
       </div>
     </div>
     ${cached.note ? `<div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4">${esc(cached.note)}</div>` : ""}
+    ${cached._basedOn ? `<div style="font-size:11px;color:var(--turmeric);margin-top:6px;line-height:1.4">↻ Covers what's left after your ${cached._basedOn.eaten} cal already logged${cached._basedOn.slots && cached._basedOn.slots.length ? " ("+cached._basedOn.slots.join(", ")+")" : ""}</div>` : ""}
     ${(cached.plan||[]).map((m,mi)=>`<div style="margin-top:12px">
       <div style="font-size:12px;font-weight:600;letter-spacing:.04em;color:${MEAL_COLORS[m.meal]||"var(--muted)"}">${esc(m.meal).toUpperCase()}</div>
       ${(m.items||[]).map((it,ii)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px">
@@ -1693,6 +1694,18 @@ async function getMealPlan(force){
   el.innerHTML = `<div class="card" style="padding:16px;text-align:center"><div style="font-size:13px;color:var(--muted)">✨ Cooking up your plan…</div></div>`;
   try {
     const history = LS.get("mdp_planhistory", []);
+    // What's already logged today, so the plan covers only the remainder
+    const eatenToday = (() => {
+      const slots = new Set();
+      let cal = 0, protein = 0;
+      log.forEach(e => {
+        const q = e.qty || 1;
+        cal += (e.cal || 0) * q;
+        protein += (e.protein || 0) * q;
+        if (e.meal) slots.add(e.meal);
+      });
+      return { cal: Math.round(cal), protein: Math.round(protein), slots: [...slots] };
+    })();
     const r = await fetch(AI_ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({type:"mealplan", profile:{
         name: profile.name || "there", diet: profile.diet || "vegetarian",
@@ -1701,6 +1714,7 @@ async function getMealPlan(force){
         habits: (profile.plan && profile.plan.habits) || [],
         conditions: profile.conditions || [],
         calorie_target: targets.cal, protein_target: targets.protein,
+        eaten_calories: eatenToday.cal, eaten_protein: eatenToday.protein, logged_slots: eatenToday.slots,
         avoid: history.slice(-40), seed: Math.floor(Math.random()*100000)
       }})});
     const data = await r.json();
@@ -1708,6 +1722,7 @@ async function getMealPlan(force){
     LS.set("mdp_mealplan_" + dateKey, data.mealplan);
     const names = (data.mealplan.plan||[]).flatMap(m=>(m.items||[]).map(i=>i.name));
     LS.set("mdp_planhistory", [...history, ...names].slice(-60));
+    mp._basedOn = eatenToday.cal > 0 ? {eaten: eatenToday.cal, slots: eatenToday.slots} : null;
   } catch(e){
     el.innerHTML = `<div class="card" style="padding:14px"><div style="font-size:13px;color:var(--chili)">Couldn't reach the AI right now — try again in a bit.</div>
       <button class="btn-ghost" style="margin-top:8px" onclick="getMealPlan(false)">Retry</button></div>`;
