@@ -1722,10 +1722,11 @@ async function getMealPlan(force){
       }})});
     const data = await r.json();
     if (!r.ok || !data.mealplan) throw new Error(data.error || "plan failed");
+    // record what the plan was based on, then persist
+    data.mealplan._basedOn = eatenToday.cal > 0 ? {eaten: eatenToday.cal, slots: eatenToday.slots} : null;
     LS.set("mdp_mealplan_" + dateKey, data.mealplan);
     const names = (data.mealplan.plan||[]).flatMap(m=>(m.items||[]).map(i=>i.name));
     LS.set("mdp_planhistory", [...history, ...names].slice(-60));
-    mp._basedOn = eatenToday.cal > 0 ? {eaten: eatenToday.cal, slots: eatenToday.slots} : null;
   } catch(e){
     el.innerHTML = `<div class="card" style="padding:14px"><div style="font-size:13px;color:var(--chili)">Couldn't reach the AI right now — try again in a bit.</div>
       <button class="btn-ghost" style="margin-top:8px" onclick="getMealPlan(false)">Retry</button></div>`;
