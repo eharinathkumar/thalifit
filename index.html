@@ -1695,17 +1695,20 @@ async function getMealPlan(force){
   try {
     const history = LS.get("mdp_planhistory", []);
     // What's already logged today, so the plan covers only the remainder
-    const eatenToday = (() => {
+    let eatenToday = { cal: 0, protein: 0, slots: [] };
+    try {
+      const todayLog = (typeof log !== "undefined" && Array.isArray(log)) ? log : LS.get("mdp_log_" + dateKey, []);
       const slots = new Set();
       let cal = 0, protein = 0;
-      log.forEach(e => {
+      (todayLog || []).forEach(e => {
+        if (!e) return;
         const q = e.qty || 1;
         cal += (e.cal || 0) * q;
         protein += (e.protein || 0) * q;
         if (e.meal) slots.add(e.meal);
       });
-      return { cal: Math.round(cal), protein: Math.round(protein), slots: [...slots] };
-    })();
+      eatenToday = { cal: Math.round(cal), protein: Math.round(protein), slots: [...slots] };
+    } catch (_) { eatenToday = { cal: 0, protein: 0, slots: [] }; }
     const r = await fetch(AI_ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({type:"mealplan", profile:{
         name: profile.name || "there", diet: profile.diet || "vegetarian",
