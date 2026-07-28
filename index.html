@@ -84,6 +84,14 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
 .fullpage{position:fixed;inset:0;background:var(--bg);z-index:120;display:flex;flex-direction:column}
 .fullpage-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px calc(14px);border-bottom:1px solid var(--line);flex-shrink:0}
 .fullpage-body{flex:1;overflow-y:auto;padding:18px 16px calc(24px + env(safe-area-inset-bottom));max-width:560px;width:100%;margin:0 auto}
+.acttabs{display:flex;gap:6px;background:var(--cardsoft);border-radius:12px;padding:4px}
+.acttab{flex:1;background:none;border:none;color:var(--muted);font-size:14px;font-weight:600;padding:9px 0;border-radius:9px;cursor:pointer;font-family:inherit}
+.acttab.on{background:var(--turmeric);color:#1a1508}
+.actrow{width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:13px 14px;margin-bottom:8px;font-size:15px;cursor:pointer;font-family:inherit}
+.actrow:hover,.actrow:active{border-color:var(--turmeric)}
+.actrow-ai{border-color:var(--turmeric);color:var(--turmeric)}
+.actrow-add{border-style:dashed}
+.acttag{font-size:10px;color:var(--faint);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0}
 .sheet .sub{margin-bottom:14px}
 .field{margin-top:12px}
 .field label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
@@ -1073,6 +1081,8 @@ let activityLog = LS.get("mdp_activity", {});      // { datekey: [entries] }
 let lastLift = LS.get("mdp_lastlift", {});         // { exerciseId: {weight, reps, sets} } for pre-fill
 let actPick = null;                                 // currently selected exercise in the picker
 let actSearch = "";
+let actTab = "strength";                            // "strength" | "cardio"
+let customExercises = LS.get("mdp_custom_exercises", []);  // AI-found cardio, saved for reuse
 
 function actFor(k){ return activityLog[k] || []; }
 function bodyKg(){ return profile.weightKg || 70; }
@@ -1116,11 +1126,17 @@ function renderActivity(){
 }
 
 function openActivity(){
-  actPick = null; actSearch = "";
+  actPick = null; actSearch = ""; actTab = "strength";
   document.getElementById("actSheet").classList.remove("hide");
   renderActPicker();
   setTimeout(()=>document.getElementById("actSearchInput")?.focus(), 60);
 }
+function setActTab(t){
+  actTab = t; actSearch = "";
+  renderActPicker();
+  setTimeout(()=>document.getElementById("actSearchInput")?.focus(), 60);
+}
+function allExercises(){ return EXERCISES.concat(customExercises); }
 function closeActivity(){ document.getElementById("actSheet").classList.add("hide"); }
 
 function renderActPicker(){
@@ -1129,8 +1145,10 @@ function renderActPicker(){
     const ex = actPick;
     const last = lastLift[ex.id];
     if (ex.type === "strength"){
-      body.innerHTML = `<div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--turmeric);margin-bottom:4px">STRENGTH</div>
-        <div class="serif" style="font-size:20px;margin-bottom:14px">${esc(ex.name)}</div>
+      body.innerHTML = `<button class="link" style="color:var(--faint);margin-bottom:14px" onclick="actPick=null;renderActPicker()">← Back</button>
+        <div class="card">
+        <div style="font-size:11px;color:var(--turmeric);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Strength</div>
+        <div class="serif" style="font-size:22px;margin-bottom:14px">${esc(ex.name)}</div>
         ${last ? `<div style="font-size:12px;color:var(--faint);margin-bottom:12px">Last time: ${last.sets}×${last.reps} @ ${last.weight} ${profile.units==="metric"?"kg":"lb"}</div>` : ""}
         <div style="display:flex;gap:10px">
           <label style="flex:1;font-size:12px;color:var(--muted)">Sets<input type="number" id="actSets" inputmode="numeric" value="${last?last.sets:3}" style="margin-top:4px"></label>
@@ -1138,36 +1156,85 @@ function renderActPicker(){
           <label style="flex:1;font-size:12px;color:var(--muted)">Weight (${profile.units==="metric"?"kg":"lb"})<input type="number" id="actWeight" inputmode="decimal" value="${last?last.weight:""}" placeholder="0" style="margin-top:4px"></label>
         </div>
         <button class="btn-main" style="width:100%;margin-top:16px" onclick="saveStrength()">Add to today</button>
-        <button class="link" style="display:block;margin:12px auto 0" onclick="actPick=null;renderActPicker()">← Back to list</button>`;
+        </div>`;
     } else {
-      body.innerHTML = `<div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--turmeric);margin-bottom:4px">CARDIO</div>
-        <div class="serif" style="font-size:20px;margin-bottom:14px">${esc(ex.name)}</div>
+      body.innerHTML = `<button class="link" style="color:var(--faint);margin-bottom:14px" onclick="actPick=null;renderActPicker()">← Back</button>
+        <div class="card">
+        <div style="font-size:11px;color:var(--turmeric);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Cardio</div>
+        <div class="serif" style="font-size:22px;margin-bottom:14px">${esc(ex.name)}</div>
         <label style="font-size:12px;color:var(--muted)">Duration (minutes)<input type="number" id="actMins" inputmode="numeric" value="30" style="margin-top:4px"></label>
-        <div style="font-size:12px;color:var(--faint);margin-top:8px">Estimated burn updates from your body weight.</div>
+        <div style="font-size:12px;color:var(--faint);margin-top:8px">Estimated burn is calculated from your body weight.</div>
         <button class="btn-main" style="width:100%;margin-top:16px" onclick="saveCardio()">Add to today</button>
-        <button class="link" style="display:block;margin:12px auto 0" onclick="actPick=null;renderActPicker()">← Back to list</button>`;
+        </div>`;
     }
     return;
   }
-  // Build the input ONCE; only the results list updates as you type (fixes the jumping keyboard).
+  // Tabbed picker: Strength | Cardio. Input built once; only the list re-renders on keystroke.
+  const ph = actTab === "strength" ? "Search lifts… (e.g. squat, bench, curl)" : "Search cardio & sports… (e.g. run, tennis, hiking)";
   body.innerHTML = `
-    <input type="text" id="actSearchInput" placeholder="Search exercises… (e.g. squat, tennis, hiking)" autocomplete="off" value="${esc(actSearch)}" style="font-size:16px">
+    <div class="acttabs">
+      <button class="acttab ${actTab==='strength'?'on':''}" onclick="setActTab('strength')">Strength</button>
+      <button class="acttab ${actTab==='cardio'?'on':''}" onclick="setActTab('cardio')">Cardio</button>
+    </div>
+    <input type="text" id="actSearchInput" placeholder="${ph}" autocomplete="off" value="${esc(actSearch)}" style="font-size:16px;margin-top:14px">
     <div id="actResults" style="margin-top:14px"></div>`;
   const input = document.getElementById("actSearchInput");
   const results = document.getElementById("actResults");
   function drawList(){
     const q = (input.value||"").toLowerCase().trim();
     actSearch = input.value;
-    const matches = EXERCISES.filter(e=>e.name.toLowerCase().includes(q));
-    results.innerHTML = matches.map(e=>`<button class="foodrow" onclick="pickExercise('${e.id}')" style="width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center">
+    const pool = allExercises().filter(e => e.type === actTab);
+    const matches = pool.filter(e=>e.name.toLowerCase().includes(q));
+    let rows = matches.map(e=>`<button class="actrow" onclick="pickExercise('${e.id}')">
         <span>${esc(e.name)}</span>
-        <span style="font-size:11px;color:var(--faint);font-family:'IBM Plex Mono',monospace">${e.type}</span>
-      </button>`).join("") || '<div class="empty">No match.</div>';
+        ${e.custom?'<span class="acttag">saved</span>':''}
+      </button>`).join("");
+    // custom "add exactly what I typed" for strength (no AI needed — it's just sets×reps×weight)
+    if (actTab === "strength" && q && !matches.some(m=>m.name.toLowerCase()===q)){
+      rows += `<button class="actrow actrow-add" onclick="pickCustomStrength()">
+        <span>Add "<b>${esc(input.value.trim())}</b>" as a lift</span><span class="acttag">custom</span></button>`;
+    }
+    // AI lookup fallback for cardio when nothing matches
+    if (actTab === "cardio" && q && !matches.length){
+      rows += `<button class="actrow actrow-ai" onclick="aiLookupCardio()">
+        <span>✨ Ask AI for "<b>${esc(input.value.trim())}</b>"</span><span class="acttag">find</span></button>`;
+    }
+    results.innerHTML = rows || '<div class="empty">Type to search, or use the option below.</div>';
   }
-  input.addEventListener("input", drawList);   // updates ONLY the list, input keeps focus
+  input.addEventListener("input", drawList);
   drawList();
 }
-function pickExercise(id){ actPick = EXERCISES.find(e=>e.id===id); renderActPicker(); }
+
+function pickCustomStrength(){
+  const name = (document.getElementById("actSearchInput").value||"").trim();
+  if (!name) return;
+  actPick = { id:"custom_"+Date.now(), name, type:"strength", met:4.0, custom:true };
+  renderActPicker();
+}
+
+async function aiLookupCardio(){
+  const name = (document.getElementById("actSearchInput").value||"").trim();
+  if (!name || !AI_ENDPOINT) return;
+  const results = document.getElementById("actResults");
+  results.innerHTML = `<div class="empty">✨ Looking up "${esc(name)}"…</div>`;
+  try {
+    const r = await fetch(AI_ENDPOINT, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ type:"exercise_met", name })
+    });
+    const data = await r.json();
+    if (!r.ok || !data.met) throw new Error(data.error || "no result");
+    const met = Math.max(1, Math.min(20, Number(data.met)));
+    const ex = { id:"custom_"+Date.now(), name: data.name || name, type:"cardio", met, custom:true };
+    customExercises.push(ex);
+    LS.set("mdp_custom_exercises", customExercises);
+    actPick = ex;
+    renderActPicker();
+  } catch(e){
+    results.innerHTML = `<div class="empty">Couldn't find that one. Try a simpler name, or pick the closest match from the list.</div>`;
+  }
+}
+function pickExercise(id){ actPick = allExercises().find(e=>e.id===id); renderActPicker(); }
 
 function saveStrength(){
   const sets = Math.max(1, Number(document.getElementById("actSets").value)||0);
