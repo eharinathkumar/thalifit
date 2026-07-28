@@ -10,6 +10,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Public+Sans:wght@400;500;600&display=swap');
+html{font-size:100%;}   /* text-size control scales this */
 :root{
   --bg:#14170F; --card:#1E2318; --cardsoft:#232919; --line:#31392A;
   --turmeric:#E9A03B; --chili:#C96A3B; --leaf:#9BBF6A;
@@ -80,6 +81,9 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
 .overlay{position:fixed;inset:0;background:rgba(10,12,7,.82);z-index:100;display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:var(--card);border-radius:20px 20px 0 0;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;padding:22px 18px calc(22px + env(safe-area-inset-bottom))}
 .sheet h3{font-family:'Fraunces',Georgia,serif;font-size:21px;font-weight:650;margin-bottom:4px}
+.fullpage{position:fixed;inset:0;background:var(--bg);z-index:120;display:flex;flex-direction:column}
+.fullpage-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px calc(14px);border-bottom:1px solid var(--line);flex-shrink:0}
+.fullpage-body{flex:1;overflow-y:auto;padding:18px 16px calc(24px + env(safe-area-inset-bottom));max-width:560px;width:100%;margin:0 auto}
 .sheet .sub{margin-bottom:14px}
 .field{margin-top:12px}
 .field label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
@@ -208,13 +212,14 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
 
 <!-- Onboarding / edit profile sheet -->
 <div id="onboard" class="overlay hide"><div class="sheet" id="onboardSheet"></div></div>
-<div id="actSheet" class="overlay hide"><div class="sheet">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <h3 style="margin:0">Log activity</h3>
-    <button onclick="closeActivity()" style="background:none;color:var(--faint);font-size:22px;padding:2px 6px">✕</button>
+<div id="actSheet" class="fullpage hide">
+  <div class="fullpage-head">
+    <button onclick="closeActivity()" class="btn-ghost" style="padding:6px 12px">← Back</button>
+    <h3 style="margin:0;font-family:'Fraunces',Georgia,serif;font-size:20px">Log activity</h3>
+    <span style="width:64px"></span>
   </div>
-  <div id="actBody"></div>
-</div></div>
+  <div id="actBody" class="fullpage-body"></div>
+</div>
 <!-- BMI info sheet -->
 <div id="bmiModal" class="overlay hide" onclick="if(event.target===this)this.classList.add('hide')">
   <div class="sheet">
@@ -755,6 +760,13 @@ function setTheme(t){
   updateThemeBtn();
 }
 function toggleTheme(){ setTheme(theme === "dark" ? "light" : "dark"); }
+function applyFontScale(){ document.documentElement.style.fontSize = (fontScale||100) + "%"; }
+function setFontScale(v){
+  fontScale = Number(v) || 100;
+  LS.set("mdp_fontscale", fontScale);
+  applyFontScale();
+  renderProfile();
+}
 function updateThemeBtn(){
   const b = document.getElementById("themeBtn");
   if (b) b.textContent = theme === "dark" ? "☀️ Light" : "🌙 Dark";
@@ -1107,6 +1119,7 @@ function openActivity(){
   actPick = null; actSearch = "";
   document.getElementById("actSheet").classList.remove("hide");
   renderActPicker();
+  setTimeout(()=>document.getElementById("actSearchInput")?.focus(), 60);
 }
 function closeActivity(){ document.getElementById("actSheet").classList.add("hide"); }
 
@@ -1136,16 +1149,23 @@ function renderActPicker(){
     }
     return;
   }
-  const q = actSearch.toLowerCase();
-  const matches = EXERCISES.filter(e=>e.name.toLowerCase().includes(q));
-  body.innerHTML = `<input type="text" id="actSearchInput" placeholder="Search exercises… (e.g. squat, tennis, hiking)" autocomplete="off" oninput="actSearch=this.value;renderActPicker();setTimeout(()=>document.getElementById('actSearchInput')?.focus(),0)" value="${esc(actSearch)}">
-    <div style="margin-top:12px;max-height:46vh;overflow:auto">
-      ${matches.map(e=>`<button class="foodrow" onclick="pickExercise('${e.id}')" style="width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center">
+  // Build the input ONCE; only the results list updates as you type (fixes the jumping keyboard).
+  body.innerHTML = `
+    <input type="text" id="actSearchInput" placeholder="Search exercises… (e.g. squat, tennis, hiking)" autocomplete="off" value="${esc(actSearch)}" style="font-size:16px">
+    <div id="actResults" style="margin-top:14px"></div>`;
+  const input = document.getElementById("actSearchInput");
+  const results = document.getElementById("actResults");
+  function drawList(){
+    const q = (input.value||"").toLowerCase().trim();
+    actSearch = input.value;
+    const matches = EXERCISES.filter(e=>e.name.toLowerCase().includes(q));
+    results.innerHTML = matches.map(e=>`<button class="foodrow" onclick="pickExercise('${e.id}')" style="width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center">
         <span>${esc(e.name)}</span>
         <span style="font-size:11px;color:var(--faint);font-family:'IBM Plex Mono',monospace">${e.type}</span>
-      </button>`).join("") || '<div class="empty">No match.</div>'}
-    </div>`;
-  setTimeout(()=>document.getElementById("actSearchInput")?.focus(),0);
+      </button>`).join("") || '<div class="empty">No match.</div>';
+  }
+  input.addEventListener("input", drawList);   // updates ONLY the list, input keeps focus
+  drawList();
 }
 function pickExercise(id){ actPick = EXERCISES.find(e=>e.id===id); renderActPicker(); }
 
@@ -1179,21 +1199,42 @@ function deleteActivity(id){
   renderActivity();
 }
 
-let waterGoal = LS.get("mdp_water_goal", 8);   // glasses/day, user-adjustable
-function waterFor(k){ return LS.get("mdp_water_" + k, 0); }
+// Water is stored internally in fluid ounces (canonical). 1 glass = 8 oz, 1 L = 33.814 oz.
+let fontScale = LS.get("mdp_fontscale", 100);
+applyFontScale();
+let waterUnit = LS.get("mdp_water_unit", "glasses");   // "glasses" | "oz" | "liters"
+let waterGoalOz = LS.get("mdp_water_goal_oz", 64);     // default 64 oz = 8 glasses ≈ 1.9 L
+const OZ_PER = { glasses: 8, oz: 1, liters: 33.814 };
+const UNIT_LABEL = { glasses: "glasses", oz: "oz", liters: "L" };
+const UNIT_STEP = { glasses: 1, oz: 8, liters: 0.25 };   // one tap adds this many display units
+function waterFor(k){ return LS.get("mdp_water_" + k, 0); }   // stored in oz
+function ozToUnit(oz, u){ return oz / OZ_PER[u]; }
+function unitToOz(v, u){ return v * OZ_PER[u]; }
+function fmtWater(oz, u){
+  const v = ozToUnit(oz, u);
+  return (u === "liters") ? (Math.round(v*100)/100) : Math.round(v);
+}
+// Recommended daily intake — the common ~2L / 64oz / 8-glass guideline (flat, non-medical)
+function recommendedOz(){ return 64; }
+
 function renderWater(){
   const el = document.getElementById("waterCard");
   if (!el) return;
-  if (dateKey !== todayKey() && !waterFor(dateKey)){ el.innerHTML = ""; return; } // past days: only show if logged
-  const n = waterFor(dateKey);
-  const goal = waterGoal;
-  const pct = Math.min(100, Math.round((n/goal)*100));
-  const glasses = Array.from({length: Math.max(goal, n)}, (_, i) =>
-    `<span style="font-size:20px;filter:${i < n ? "none" : "grayscale(1) opacity(.28)"}">💧</span>`).join("");
+  if (dateKey !== todayKey() && !waterFor(dateKey)){ el.innerHTML = ""; return; }
+  const oz = waterFor(dateKey);
+  const goalOz = waterGoalOz;
+  const u = waterUnit;
+  const pct = Math.min(100, Math.round((oz/goalOz)*100));
+  const cur = fmtWater(oz, u), goalDisp = fmtWater(goalOz, u), rec = fmtWater(recommendedOz(), u);
+  // glass icons only make sense for glasses; show a simple fill bar for oz/L
+  const glassRow = u === "glasses"
+    ? `<div style="margin-top:10px;line-height:1.9">${Array.from({length: Math.max(Math.round(goalOz/8), Math.round(oz/8))}, (_, i) =>
+        `<span style="font-size:20px;filter:${i < Math.round(oz/8) ? "none" : "grayscale(1) opacity(.28)"}">💧</span>`).join("")}</div>`
+    : "";
   el.innerHTML = `<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div><div class="serif" style="font-size:17px">Water</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">${n} of ${goal} glasses${n>=goal?" · goal met 🎉":""}</div></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${cur} of ${goalDisp} ${UNIT_LABEL[u]}${oz>=goalOz?" · goal met 🎉":""}</div></div>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="addbtn" onclick="addWater(-1)" style="width:34px;padding:6px 0">−</button>
         <button class="addbtn" onclick="addWater(1)" style="width:34px;padding:6px 0">+</button>
@@ -1202,24 +1243,46 @@ function renderWater(){
     <div style="height:8px;background:var(--line);border-radius:5px;overflow:hidden;margin-top:12px">
       <div style="height:100%;width:${pct}%;background:#5B8DD6;transition:width .4s"></div>
     </div>
-    <div style="margin-top:10px;line-height:1.9">${glasses}</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
-      <span style="font-size:11px;color:var(--faint)">Daily goal:</span>
+    ${glassRow}
+    <div style="font-size:11px;color:var(--faint);margin-top:9px">Recommended: about ${rec} ${UNIT_LABEL[u]} a day — adjust to your needs, especially with heat or exercise.</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--faint)">Unit:</span>
+      <select onchange="setWaterUnit(this.value)" style="font-size:11px;padding:3px 7px;width:auto;background:var(--cardsoft)">
+        ${["glasses","oz","liters"].map(x=>`<option value="${x}" ${x===u?"selected":""}>${x==="liters"?"liters":x}</option>`).join("")}
+      </select>
+      <span style="font-size:11px;color:var(--faint);margin-left:6px">Goal:</span>
       <select onchange="setWaterGoal(this.value)" style="font-size:11px;padding:3px 7px;width:auto;background:var(--cardsoft)">
-        ${[4,6,8,10,12].map(g=>`<option value="${g}" ${g===goal?"selected":""}>${g} glasses</option>`).join("")}
+        ${waterGoalOptions(u, goalOz)}
       </select>
     </div>
   </div>`;
 }
-function addWater(d){
+function waterGoalOptions(u, goalOz){
+  // sensible goal choices per unit
+  const opts = u === "glasses" ? [4,6,8,10,12,14]
+             : u === "oz"      ? [32,48,64,80,96,112,128]
+             :                   [1,1.5,2,2.5,3,3.5];
+  const curDisp = fmtWater(goalOz, u);
+  return opts.map(o => {
+    const selected = Math.abs(o - curDisp) < (u==="liters"?0.24:0.5);
+    return `<option value="${o}" ${selected?"selected":""}>${o} ${UNIT_LABEL[u]}</option>`;
+  }).join("");
+}
+function addWater(dir){
   const k = dateKey;
-  const n = Math.max(0, waterFor(k) + d);
-  LS.set("mdp_water_" + k, n);
+  const stepOz = unitToOz(UNIT_STEP[waterUnit], waterUnit);
+  const oz = Math.max(0, waterFor(k) + dir*stepOz);
+  LS.set("mdp_water_" + k, Math.round(oz*100)/100);
   renderWater();
 }
-function setWaterGoal(g){
-  waterGoal = Number(g) || 8;
-  LS.set("mdp_water_goal", waterGoal);
+function setWaterUnit(u){
+  waterUnit = u;
+  LS.set("mdp_water_unit", u);
+  renderWater();
+}
+function setWaterGoal(v){
+  waterGoalOz = Math.round(unitToOz(Number(v), waterUnit)*100)/100;
+  LS.set("mdp_water_goal_oz", waterGoalOz);
   renderWater();
 }
 let readingPrefs = LS.get("mdp_reading_prefs", null) || {fasting:0, postmeal:0, hba1c:90, bp:7};
@@ -1633,6 +1696,7 @@ function renderProfile(){
       <button class="btn-main" onclick="openOnboarding()">Get started</button></div>`;
     return;
   }
+  const fontOptions = [["Normal",100],["Large",115],["Larger",130],["Largest",145]];
   const bmi = calcBMI(profile.weightKg, profile.heightCm);
   const latest = weights.length ? weights[weights.length-1] : null;
   const first = weights.length ? weights[0] : null;
@@ -1702,6 +1766,16 @@ function renderProfile(){
     ${journeyHtml}
 
     ${readingsCard()}
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <div><div class="serif" style="font-size:16px">Text size</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Make everything easier to read</div></div>
+        <select onchange="setFontScale(this.value)" style="font-size:13px;padding:7px 10px;width:auto;background:var(--cardsoft)">
+          ${fontOptions.map(([lbl,val])=>`<option value="${val}" ${fontScale===val?"selected":""}>${lbl}</option>`).join("")}
+        </select>
+      </div>
+    </div>
 
     ${checkinDue ? `<div class="card" style="border:1px solid var(--turmeric)">
       <div class="serif" style="font-size:17px">📋 Weekly check-in ready</div>
