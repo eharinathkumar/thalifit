@@ -10,7 +10,6 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Public+Sans:wght@400;500;600&display=swap');
-html{font-size:100%;}   /* text-size control scales this */
 :root{
   --bg:#14170F; --card:#1E2318; --cardsoft:#232919; --line:#31392A;
   --turmeric:#E9A03B; --chili:#C96A3B; --leaf:#9BBF6A;
@@ -756,15 +755,6 @@ function setTheme(t){
   updateThemeBtn();
 }
 function toggleTheme(){ setTheme(theme === "dark" ? "light" : "dark"); }
-let fontScale = LS.get("mdp_fontscale", 100);
-function applyFontScale(){ document.documentElement.style.fontSize = (fontScale) + "%"; }
-function setFontScale(v){
-  fontScale = Number(v) || 100;
-  LS.set("mdp_fontscale", fontScale);
-  applyFontScale();
-  renderProfile();
-}
-applyFontScale();
 function updateThemeBtn(){
   const b = document.getElementById("themeBtn");
   if (b) b.textContent = theme === "dark" ? "☀️ Light" : "🌙 Dark";
@@ -1189,40 +1179,21 @@ function deleteActivity(id){
   renderActivity();
 }
 
-// Water is stored internally in fluid ounces (canonical). 1 glass = 8 oz, 1 L = 33.814 oz.
-let waterUnit = LS.get("mdp_water_unit", "glasses");   // "glasses" | "oz" | "liters"
-let waterGoalOz = LS.get("mdp_water_goal_oz", 64);     // default 64 oz = 8 glasses ≈ 1.9 L
-const OZ_PER = { glasses: 8, oz: 1, liters: 33.814 };
-const UNIT_LABEL = { glasses: "glasses", oz: "oz", liters: "L" };
-const UNIT_STEP = { glasses: 1, oz: 8, liters: 0.25 };   // one tap adds this many display units
-function waterFor(k){ return LS.get("mdp_water_" + k, 0); }   // stored in oz
-function ozToUnit(oz, u){ return oz / OZ_PER[u]; }
-function unitToOz(v, u){ return v * OZ_PER[u]; }
-function fmtWater(oz, u){
-  const v = ozToUnit(oz, u);
-  return (u === "liters") ? (Math.round(v*100)/100) : Math.round(v);
-}
-// Recommended daily intake — the common ~2L / 64oz / 8-glass guideline (flat, non-medical)
-function recommendedOz(){ return 64; }
-
+let waterGoal = LS.get("mdp_water_goal", 8);   // glasses/day, user-adjustable
+function waterFor(k){ return LS.get("mdp_water_" + k, 0); }
 function renderWater(){
   const el = document.getElementById("waterCard");
   if (!el) return;
-  if (dateKey !== todayKey() && !waterFor(dateKey)){ el.innerHTML = ""; return; }
-  const oz = waterFor(dateKey);
-  const goalOz = waterGoalOz;
-  const u = waterUnit;
-  const pct = Math.min(100, Math.round((oz/goalOz)*100));
-  const cur = fmtWater(oz, u), goalDisp = fmtWater(goalOz, u), rec = fmtWater(recommendedOz(), u);
-  // glass icons only make sense for glasses; show a simple fill bar for oz/L
-  const glassRow = u === "glasses"
-    ? `<div style="margin-top:10px;line-height:1.9">${Array.from({length: Math.max(Math.round(goalOz/8), Math.round(oz/8))}, (_, i) =>
-        `<span style="font-size:20px;filter:${i < Math.round(oz/8) ? "none" : "grayscale(1) opacity(.28)"}">💧</span>`).join("")}</div>`
-    : "";
+  if (dateKey !== todayKey() && !waterFor(dateKey)){ el.innerHTML = ""; return; } // past days: only show if logged
+  const n = waterFor(dateKey);
+  const goal = waterGoal;
+  const pct = Math.min(100, Math.round((n/goal)*100));
+  const glasses = Array.from({length: Math.max(goal, n)}, (_, i) =>
+    `<span style="font-size:20px;filter:${i < n ? "none" : "grayscale(1) opacity(.28)"}">💧</span>`).join("");
   el.innerHTML = `<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div><div class="serif" style="font-size:17px">Water</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">${cur} of ${goalDisp} ${UNIT_LABEL[u]}${oz>=goalOz?" · goal met 🎉":""}</div></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${n} of ${goal} glasses${n>=goal?" · goal met 🎉":""}</div></div>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="addbtn" onclick="addWater(-1)" style="width:34px;padding:6px 0">−</button>
         <button class="addbtn" onclick="addWater(1)" style="width:34px;padding:6px 0">+</button>
@@ -1231,46 +1202,24 @@ function renderWater(){
     <div style="height:8px;background:var(--line);border-radius:5px;overflow:hidden;margin-top:12px">
       <div style="height:100%;width:${pct}%;background:#5B8DD6;transition:width .4s"></div>
     </div>
-    ${glassRow}
-    <div style="font-size:11px;color:var(--faint);margin-top:9px">Recommended: about ${rec} ${UNIT_LABEL[u]} a day — adjust to your needs, especially with heat or exercise.</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
-      <span style="font-size:11px;color:var(--faint)">Unit:</span>
-      <select onchange="setWaterUnit(this.value)" style="font-size:11px;padding:3px 7px;width:auto;background:var(--cardsoft)">
-        ${["glasses","oz","liters"].map(x=>`<option value="${x}" ${x===u?"selected":""}>${x==="liters"?"liters":x}</option>`).join("")}
-      </select>
-      <span style="font-size:11px;color:var(--faint);margin-left:6px">Goal:</span>
+    <div style="margin-top:10px;line-height:1.9">${glasses}</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+      <span style="font-size:11px;color:var(--faint)">Daily goal:</span>
       <select onchange="setWaterGoal(this.value)" style="font-size:11px;padding:3px 7px;width:auto;background:var(--cardsoft)">
-        ${waterGoalOptions(u, goalOz)}
+        ${[4,6,8,10,12].map(g=>`<option value="${g}" ${g===goal?"selected":""}>${g} glasses</option>`).join("")}
       </select>
     </div>
   </div>`;
 }
-function waterGoalOptions(u, goalOz){
-  // sensible goal choices per unit
-  const opts = u === "glasses" ? [4,6,8,10,12,14]
-             : u === "oz"      ? [32,48,64,80,96,112,128]
-             :                   [1,1.5,2,2.5,3,3.5];
-  const curDisp = fmtWater(goalOz, u);
-  return opts.map(o => {
-    const selected = Math.abs(o - curDisp) < (u==="liters"?0.24:0.5);
-    return `<option value="${o}" ${selected?"selected":""}>${o} ${UNIT_LABEL[u]}</option>`;
-  }).join("");
-}
-function addWater(dir){
+function addWater(d){
   const k = dateKey;
-  const stepOz = unitToOz(UNIT_STEP[waterUnit], waterUnit);
-  const oz = Math.max(0, waterFor(k) + dir*stepOz);
-  LS.set("mdp_water_" + k, Math.round(oz*100)/100);
+  const n = Math.max(0, waterFor(k) + d);
+  LS.set("mdp_water_" + k, n);
   renderWater();
 }
-function setWaterUnit(u){
-  waterUnit = u;
-  LS.set("mdp_water_unit", u);
-  renderWater();
-}
-function setWaterGoal(v){
-  waterGoalOz = Math.round(unitToOz(Number(v), waterUnit)*100)/100;
-  LS.set("mdp_water_goal_oz", waterGoalOz);
+function setWaterGoal(g){
+  waterGoal = Number(g) || 8;
+  LS.set("mdp_water_goal", waterGoal);
   renderWater();
 }
 let readingPrefs = LS.get("mdp_reading_prefs", null) || {fasting:0, postmeal:0, hba1c:90, bp:7};
@@ -1684,7 +1633,6 @@ function renderProfile(){
       <button class="btn-main" onclick="openOnboarding()">Get started</button></div>`;
     return;
   }
-  const fontOptions = [["Normal",100],["Large",115],["Larger",130],["Largest",145]];
   const bmi = calcBMI(profile.weightKg, profile.heightCm);
   const latest = weights.length ? weights[weights.length-1] : null;
   const first = weights.length ? weights[0] : null;
@@ -1754,16 +1702,6 @@ function renderProfile(){
     ${journeyHtml}
 
     ${readingsCard()}
-
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-        <div><div class="serif" style="font-size:16px">Text size</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px">Make everything easier to read</div></div>
-        <select onchange="setFontScale(this.value)" style="font-size:13px;padding:7px 10px;width:auto;background:var(--cardsoft)">
-          ${fontOptions.map(([lbl,val])=>`<option value="${val}" ${fontScale===val?"selected":""}>${lbl}</option>`).join("")}
-        </select>
-      </div>
-    </div>
 
     ${checkinDue ? `<div class="card" style="border:1px solid var(--turmeric)">
       <div class="serif" style="font-size:17px">📋 Weekly check-in ready</div>

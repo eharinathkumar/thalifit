@@ -1,4 +1,4 @@
-const CACHE = "thalifit-v36";
+const CACHE = "thalifit-v35";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
