@@ -10,6 +10,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Public+Sans:wght@400;500;600&display=swap');
+html{font-size:100%;}   /* text-size control scales this */
 :root{
   --bg:#14170F; --card:#1E2318; --cardsoft:#232919; --line:#31392A;
   --turmeric:#E9A03B; --chili:#C96A3B; --leaf:#9BBF6A;
@@ -149,7 +150,11 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
 
     <div id="planCard"></div>
 
+    <div id="waterCard"></div>
+
     <div id="meals"></div>
+
+    <div id="activityCard"></div>
 
     <div id="aiBox" class="hide" style="background:var(--cardsoft);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:20px">
       <div style="font-size:12px;color:var(--turmeric);font-weight:600;letter-spacing:.05em;margin-bottom:4px">✨ AI QUICK LOG</div>
@@ -204,6 +209,13 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
 
 <!-- Onboarding / edit profile sheet -->
 <div id="onboard" class="overlay hide"><div class="sheet" id="onboardSheet"></div></div>
+<div id="actSheet" class="overlay hide"><div class="sheet">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <h3 style="margin:0">Log activity</h3>
+    <button onclick="closeActivity()" style="background:none;color:var(--faint);font-size:22px;padding:2px 6px">✕</button>
+  </div>
+  <div id="actBody"></div>
+</div></div>
 <!-- BMI info sheet -->
 <div id="bmiModal" class="overlay hide" onclick="if(event.target===this)this.classList.add('hide')">
   <div class="sheet">
@@ -744,6 +756,15 @@ function setTheme(t){
   updateThemeBtn();
 }
 function toggleTheme(){ setTheme(theme === "dark" ? "light" : "dark"); }
+let fontScale = LS.get("mdp_fontscale", 100);
+function applyFontScale(){ document.documentElement.style.fontSize = (fontScale) + "%"; }
+function setFontScale(v){
+  fontScale = Number(v) || 100;
+  LS.set("mdp_fontscale", fontScale);
+  applyFontScale();
+  renderProfile();
+}
+applyFontScale();
 function updateThemeBtn(){
   const b = document.getElementById("themeBtn");
   if (b) b.textContent = theme === "dark" ? "☀️ Light" : "🌙 Dark";
@@ -909,8 +930,10 @@ function refreshDayView(){
   addingTo = null;
   renderDayNav();
   renderTotals();
+  renderWater();
   renderMeals();
   renderPlanCard();
+  renderActivity();
   document.getElementById("dateLabel").textContent = todayLabel();
 }
 function goDay(d){
@@ -942,7 +965,314 @@ let targets = LS.get("mdp_targets", {cal:2200, protein:132});
 let profile = LS.get("mdp_profile", null);
 if (profile && profile.diet === "nonveg") { profile.diet = "meat"; LS.set("mdp_profile", profile); }
 let weights = LS.get("mdp_weights", []);
+// One-time migration: an older build could store an imperial POUNDS value in the kg field.
+// The tell: BMI computed from the stored kg + height is wildly out of human range.
+// If treating the value as pounds (÷2.20462) brings BMI back into a plausible band, it was pounds.
+(function fixWeightUnits(){
+  try {
+    if (!profile || !profile.heightCm) return;
+    const hM = profile.heightCm/100;
+    const bmiOf = kg => kg/(hM*hM);
+    const implausible = b => b < 8 || b > 55;      // BMI>55 from stored kg is a red flag
+    const plausible  = b => b >= 12 && b <= 45;     // pounds reading must land clearly normal
+    const fixKg = kg => {
+      if (kg == null) return kg;
+      const asKg = bmiOf(kg);
+      const asLb = bmiOf(kg/2.20462);
+      // only convert when kg reading is impossible AND the pounds reading is sensible
+      if (implausible(asKg) && plausible(asLb)) return Math.round((kg/2.20462)*10)/10;
+      return kg;
+    };
+    let changed = false;
+    const nw = fixKg(profile.weightKg);
+    if (nw !== profile.weightKg){ profile.weightKg = nw; changed = true; }
+    if (profile.goalWeightKg){ const ng = fixKg(profile.goalWeightKg); if (ng !== profile.goalWeightKg){ profile.goalWeightKg = ng; changed = true; } }
+    if (profile.plan && profile.plan.startWeightKg){ const ns = fixKg(profile.plan.startWeightKg); if (ns !== profile.plan.startWeightKg){ profile.plan.startWeightKg = ns; changed = true; } }
+    if (changed) LS.set("mdp_profile", profile);
+    let wchanged = false;
+    weights = (weights||[]).map(w => {
+      if (!w || w.kg == null) return w;
+      const nk = fixKg(w.kg);
+      if (nk !== w.kg){ wchanged = true; return {...w, kg: nk}; }
+      return w;
+    });
+    if (wchanged) LS.set("mdp_weights", weights);
+  } catch(_){}
+})();
 let readings = LS.get("mdp_readings", []);
+
+// ================= Activity =================
+// MET = metabolic equivalent; cardio burn = MET * 3.5 * kg / 200 * minutes
+const EXERCISES = [
+  // --- Strength: compound ---
+  {id:"squat", name:"Barbell squat", type:"strength", met:5.0},
+  {id:"deadlift", name:"Deadlift", type:"strength", met:6.0},
+  {id:"rdl", name:"Romanian deadlift", type:"strength", met:5.0},
+  {id:"bench", name:"Bench press", type:"strength", met:5.0},
+  {id:"ohp", name:"Overhead press", type:"strength", met:5.0},
+  {id:"row", name:"Barbell row", type:"strength", met:5.0},
+  {id:"hipthrust", name:"Hip thrust", type:"strength", met:5.0},
+  {id:"bulgarian", name:"Bulgarian split squat", type:"strength", met:5.0},
+  {id:"lunge", name:"Lunge", type:"strength", met:4.0},
+  {id:"pullup", name:"Pull-up", type:"strength", met:5.0},
+  {id:"chinup", name:"Chin-up", type:"strength", met:5.0},
+  {id:"dip", name:"Dip", type:"strength", met:5.0},
+  // --- Strength: dumbbell / machine ---
+  {id:"dbcurl", name:"Dumbbell curl", type:"strength", met:3.5},
+  {id:"dbpress", name:"Dumbbell shoulder press", type:"strength", met:4.0},
+  {id:"latpull", name:"Lat pulldown", type:"strength", met:4.0},
+  {id:"legpress", name:"Leg press", type:"strength", met:5.0},
+  {id:"legcurl", name:"Leg curl", type:"strength", met:4.0},
+  {id:"legext", name:"Leg extension", type:"strength", met:4.0},
+  {id:"chestpress", name:"Chest press (machine)", type:"strength", met:4.0},
+  {id:"cablerow", name:"Cable row", type:"strength", met:4.0},
+  {id:"pushdown", name:"Tricep pushdown", type:"strength", met:3.5},
+  {id:"latraise", name:"Lateral raise", type:"strength", met:3.5},
+  // --- Strength: bodyweight ---
+  {id:"pushup", name:"Push-up", type:"strength", met:4.0},
+  {id:"plank", name:"Plank", type:"strength", met:3.5},
+  {id:"bwsquat", name:"Bodyweight squat", type:"strength", met:4.0},
+  {id:"glutebridge", name:"Glute bridge", type:"strength", met:3.5},
+  {id:"calfraise", name:"Calf raise", type:"strength", met:3.0},
+  // --- Cardio ---
+  {id:"walk", name:"Walking", type:"cardio", met:3.5},
+  {id:"briskwalk", name:"Brisk walking", type:"cardio", met:5.0},
+  {id:"run", name:"Running", type:"cardio", met:9.8},
+  {id:"jog", name:"Jogging", type:"cardio", met:7.0},
+  {id:"cycle", name:"Cycling", type:"cardio", met:7.5},
+  {id:"elliptical", name:"Elliptical", type:"cardio", met:5.0},
+  {id:"rowing", name:"Rowing machine", type:"cardio", met:7.0},
+  {id:"stairs", name:"Stair climber", type:"cardio", met:9.0},
+  {id:"swim", name:"Swimming", type:"cardio", met:7.0},
+  {id:"jumprope", name:"Jump rope", type:"cardio", met:11.0},
+  {id:"hiit", name:"HIIT", type:"cardio", met:8.0},
+  // --- Sports / outdoor ---
+  {id:"volleyball", name:"Volleyball", type:"cardio", met:4.0},
+  {id:"volleyballcomp", name:"Volleyball (competitive)", type:"cardio", met:8.0},
+  {id:"badminton", name:"Badminton", type:"cardio", met:5.5},
+  {id:"tennis", name:"Tennis", type:"cardio", met:7.3},
+  {id:"tabletennis", name:"Table tennis", type:"cardio", met:4.0},
+  {id:"basketball", name:"Basketball", type:"cardio", met:6.5},
+  {id:"soccer", name:"Soccer", type:"cardio", met:7.0},
+  {id:"cricket", name:"Cricket", type:"cardio", met:4.8},
+  {id:"pickleball", name:"Pickleball", type:"cardio", met:5.5},
+  {id:"hiking", name:"Hiking", type:"cardio", met:6.0},
+  {id:"hikinghills", name:"Hiking (hilly / pack)", type:"cardio", met:7.5},
+  {id:"dancing", name:"Dancing", type:"cardio", met:5.0},
+  {id:"yoga", name:"Yoga", type:"cardio", met:3.0},
+  {id:"suryanamaskar", name:"Surya namaskar", type:"cardio", met:4.0},
+  {id:"pilates", name:"Pilates", type:"cardio", met:3.5},
+  {id:"golf", name:"Golf (walking)", type:"cardio", met:4.8},
+  {id:"skiing", name:"Skiing", type:"cardio", met:7.0},
+  {id:"skating", name:"Skating", type:"cardio", met:7.0},
+];
+
+let activityLog = LS.get("mdp_activity", {});      // { datekey: [entries] }
+let lastLift = LS.get("mdp_lastlift", {});         // { exerciseId: {weight, reps, sets} } for pre-fill
+let actPick = null;                                 // currently selected exercise in the picker
+let actSearch = "";
+
+function actFor(k){ return activityLog[k] || []; }
+function bodyKg(){ return profile.weightKg || 70; }
+
+function cardioBurn(met, minutes){
+  return Math.round(met * 3.5 * bodyKg() / 200 * minutes);
+}
+function strengthBurn(met, minutes){  // strength: estimate ~ sets as minutes-ish
+  return Math.round(met * 3.5 * bodyKg() / 200 * minutes);
+}
+
+function dayBurn(k){
+  return actFor(k).reduce((s,e)=>s+(e.cal||0),0);
+}
+
+function renderActivity(){
+  const el = document.getElementById("activityCard");
+  if (!el) return;
+  const entries = actFor(dateKey);
+  const burn = dayBurn(dateKey);
+  const isToday = dateKey === todayKey();
+  if (!entries.length && !isToday){ el.innerHTML = ""; return; }
+
+  el.innerHTML = `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="serif" style="font-size:18px">Activity</div>
+      <div style="display:flex;gap:9px;align-items:center">
+        ${burn ? `<span style="font-size:12px;color:var(--muted)">🔥 ~${burn} cal</span>` : ""}
+        ${isToday ? `<button class="addbtn" onclick="openActivity()">+ Log</button>` : ""}
+      </div>
+    </div>
+    ${!entries.length ? '<div class="empty" style="margin-top:8px">No workouts logged.</div>' : ""}
+    ${entries.map(e=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)">
+        <div>
+          <div style="font-size:14.5px">${esc(e.name)}</div>
+          <div style="font-size:12px;color:var(--faint);font-family:'IBM Plex Mono',monospace">${esc(e.detail)}${e.cal?" · ~"+e.cal+" cal":""}</div>
+        </div>
+        <button class="link" style="color:var(--faint);font-size:12px" onclick="deleteActivity('${e.id}')">Remove</button>
+      </div>`).join("")}
+  </div>`;
+}
+
+function openActivity(){
+  actPick = null; actSearch = "";
+  document.getElementById("actSheet").classList.remove("hide");
+  renderActPicker();
+}
+function closeActivity(){ document.getElementById("actSheet").classList.add("hide"); }
+
+function renderActPicker(){
+  const body = document.getElementById("actBody");
+  if (actPick){
+    const ex = actPick;
+    const last = lastLift[ex.id];
+    if (ex.type === "strength"){
+      body.innerHTML = `<div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--turmeric);margin-bottom:4px">STRENGTH</div>
+        <div class="serif" style="font-size:20px;margin-bottom:14px">${esc(ex.name)}</div>
+        ${last ? `<div style="font-size:12px;color:var(--faint);margin-bottom:12px">Last time: ${last.sets}×${last.reps} @ ${last.weight} ${profile.units==="metric"?"kg":"lb"}</div>` : ""}
+        <div style="display:flex;gap:10px">
+          <label style="flex:1;font-size:12px;color:var(--muted)">Sets<input type="number" id="actSets" inputmode="numeric" value="${last?last.sets:3}" style="margin-top:4px"></label>
+          <label style="flex:1;font-size:12px;color:var(--muted)">Reps<input type="number" id="actReps" inputmode="numeric" value="${last?last.reps:10}" style="margin-top:4px"></label>
+          <label style="flex:1;font-size:12px;color:var(--muted)">Weight (${profile.units==="metric"?"kg":"lb"})<input type="number" id="actWeight" inputmode="decimal" value="${last?last.weight:""}" placeholder="0" style="margin-top:4px"></label>
+        </div>
+        <button class="btn-main" style="width:100%;margin-top:16px" onclick="saveStrength()">Add to today</button>
+        <button class="link" style="display:block;margin:12px auto 0" onclick="actPick=null;renderActPicker()">← Back to list</button>`;
+    } else {
+      body.innerHTML = `<div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--turmeric);margin-bottom:4px">CARDIO</div>
+        <div class="serif" style="font-size:20px;margin-bottom:14px">${esc(ex.name)}</div>
+        <label style="font-size:12px;color:var(--muted)">Duration (minutes)<input type="number" id="actMins" inputmode="numeric" value="30" style="margin-top:4px"></label>
+        <div style="font-size:12px;color:var(--faint);margin-top:8px">Estimated burn updates from your body weight.</div>
+        <button class="btn-main" style="width:100%;margin-top:16px" onclick="saveCardio()">Add to today</button>
+        <button class="link" style="display:block;margin:12px auto 0" onclick="actPick=null;renderActPicker()">← Back to list</button>`;
+    }
+    return;
+  }
+  const q = actSearch.toLowerCase();
+  const matches = EXERCISES.filter(e=>e.name.toLowerCase().includes(q));
+  body.innerHTML = `<input type="text" id="actSearchInput" placeholder="Search exercises… (e.g. squat, tennis, hiking)" autocomplete="off" oninput="actSearch=this.value;renderActPicker();setTimeout(()=>document.getElementById('actSearchInput')?.focus(),0)" value="${esc(actSearch)}">
+    <div style="margin-top:12px;max-height:46vh;overflow:auto">
+      ${matches.map(e=>`<button class="foodrow" onclick="pickExercise('${e.id}')" style="width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center">
+        <span>${esc(e.name)}</span>
+        <span style="font-size:11px;color:var(--faint);font-family:'IBM Plex Mono',monospace">${e.type}</span>
+      </button>`).join("") || '<div class="empty">No match.</div>'}
+    </div>`;
+  setTimeout(()=>document.getElementById("actSearchInput")?.focus(),0);
+}
+function pickExercise(id){ actPick = EXERCISES.find(e=>e.id===id); renderActPicker(); }
+
+function saveStrength(){
+  const sets = Math.max(1, Number(document.getElementById("actSets").value)||0);
+  const reps = Math.max(1, Number(document.getElementById("actReps").value)||0);
+  const weight = Math.max(0, Number(document.getElementById("actWeight").value)||0);
+  const ex = actPick;
+  // rough burn: treat total working time ~ sets * 0.75 min
+  const cal = strengthBurn(ex.met, sets * 0.75);
+  const detail = `${sets}×${reps}${weight?" @ "+weight+" "+(profile.units==="metric"?"kg":"lb"):""}`;
+  const entry = {id:uid(), exId:ex.id, name:ex.name, type:"strength", detail, cal, sets, reps, weight, ts:Date.now()};
+  activityLog[dateKey] = [...actFor(dateKey), entry];
+  LS.set("mdp_activity", activityLog);
+  lastLift[ex.id] = {sets, reps, weight};
+  LS.set("mdp_lastlift", lastLift);
+  closeActivity(); renderActivity();
+}
+function saveCardio(){
+  const mins = Math.max(1, Number(document.getElementById("actMins").value)||0);
+  const ex = actPick;
+  const cal = cardioBurn(ex.met, mins);
+  const entry = {id:uid(), exId:ex.id, name:ex.name, type:"cardio", detail:`${mins} min`, cal, minutes:mins, ts:Date.now()};
+  activityLog[dateKey] = [...actFor(dateKey), entry];
+  LS.set("mdp_activity", activityLog);
+  closeActivity(); renderActivity();
+}
+function deleteActivity(id){
+  activityLog[dateKey] = actFor(dateKey).filter(e=>e.id!==id);
+  LS.set("mdp_activity", activityLog);
+  renderActivity();
+}
+
+// Water is stored internally in fluid ounces (canonical). 1 glass = 8 oz, 1 L = 33.814 oz.
+let waterUnit = LS.get("mdp_water_unit", "glasses");   // "glasses" | "oz" | "liters"
+let waterGoalOz = LS.get("mdp_water_goal_oz", 64);     // default 64 oz = 8 glasses ≈ 1.9 L
+const OZ_PER = { glasses: 8, oz: 1, liters: 33.814 };
+const UNIT_LABEL = { glasses: "glasses", oz: "oz", liters: "L" };
+const UNIT_STEP = { glasses: 1, oz: 8, liters: 0.25 };   // one tap adds this many display units
+function waterFor(k){ return LS.get("mdp_water_" + k, 0); }   // stored in oz
+function ozToUnit(oz, u){ return oz / OZ_PER[u]; }
+function unitToOz(v, u){ return v * OZ_PER[u]; }
+function fmtWater(oz, u){
+  const v = ozToUnit(oz, u);
+  return (u === "liters") ? (Math.round(v*100)/100) : Math.round(v);
+}
+// Recommended daily intake — the common ~2L / 64oz / 8-glass guideline (flat, non-medical)
+function recommendedOz(){ return 64; }
+
+function renderWater(){
+  const el = document.getElementById("waterCard");
+  if (!el) return;
+  if (dateKey !== todayKey() && !waterFor(dateKey)){ el.innerHTML = ""; return; }
+  const oz = waterFor(dateKey);
+  const goalOz = waterGoalOz;
+  const u = waterUnit;
+  const pct = Math.min(100, Math.round((oz/goalOz)*100));
+  const cur = fmtWater(oz, u), goalDisp = fmtWater(goalOz, u), rec = fmtWater(recommendedOz(), u);
+  // glass icons only make sense for glasses; show a simple fill bar for oz/L
+  const glassRow = u === "glasses"
+    ? `<div style="margin-top:10px;line-height:1.9">${Array.from({length: Math.max(Math.round(goalOz/8), Math.round(oz/8))}, (_, i) =>
+        `<span style="font-size:20px;filter:${i < Math.round(oz/8) ? "none" : "grayscale(1) opacity(.28)"}">💧</span>`).join("")}</div>`
+    : "";
+  el.innerHTML = `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><div class="serif" style="font-size:17px">Water</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${cur} of ${goalDisp} ${UNIT_LABEL[u]}${oz>=goalOz?" · goal met 🎉":""}</div></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="addbtn" onclick="addWater(-1)" style="width:34px;padding:6px 0">−</button>
+        <button class="addbtn" onclick="addWater(1)" style="width:34px;padding:6px 0">+</button>
+      </div>
+    </div>
+    <div style="height:8px;background:var(--line);border-radius:5px;overflow:hidden;margin-top:12px">
+      <div style="height:100%;width:${pct}%;background:#5B8DD6;transition:width .4s"></div>
+    </div>
+    ${glassRow}
+    <div style="font-size:11px;color:var(--faint);margin-top:9px">Recommended: about ${rec} ${UNIT_LABEL[u]} a day — adjust to your needs, especially with heat or exercise.</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--faint)">Unit:</span>
+      <select onchange="setWaterUnit(this.value)" style="font-size:11px;padding:3px 7px;width:auto;background:var(--cardsoft)">
+        ${["glasses","oz","liters"].map(x=>`<option value="${x}" ${x===u?"selected":""}>${x==="liters"?"liters":x}</option>`).join("")}
+      </select>
+      <span style="font-size:11px;color:var(--faint);margin-left:6px">Goal:</span>
+      <select onchange="setWaterGoal(this.value)" style="font-size:11px;padding:3px 7px;width:auto;background:var(--cardsoft)">
+        ${waterGoalOptions(u, goalOz)}
+      </select>
+    </div>
+  </div>`;
+}
+function waterGoalOptions(u, goalOz){
+  // sensible goal choices per unit
+  const opts = u === "glasses" ? [4,6,8,10,12,14]
+             : u === "oz"      ? [32,48,64,80,96,112,128]
+             :                   [1,1.5,2,2.5,3,3.5];
+  const curDisp = fmtWater(goalOz, u);
+  return opts.map(o => {
+    const selected = Math.abs(o - curDisp) < (u==="liters"?0.24:0.5);
+    return `<option value="${o}" ${selected?"selected":""}>${o} ${UNIT_LABEL[u]}</option>`;
+  }).join("");
+}
+function addWater(dir){
+  const k = dateKey;
+  const stepOz = unitToOz(UNIT_STEP[waterUnit], waterUnit);
+  const oz = Math.max(0, waterFor(k) + dir*stepOz);
+  LS.set("mdp_water_" + k, Math.round(oz*100)/100);
+  renderWater();
+}
+function setWaterUnit(u){
+  waterUnit = u;
+  LS.set("mdp_water_unit", u);
+  renderWater();
+}
+function setWaterGoal(v){
+  waterGoalOz = Math.round(unitToOz(Number(v), waterUnit)*100)/100;
+  LS.set("mdp_water_goal_oz", waterGoalOz);
+  renderWater();
+}
 let readingPrefs = LS.get("mdp_reading_prefs", null) || {fasting:0, postmeal:0, hba1c:90, bp:7};
 const READING_TYPES = [
   {k:"fasting", label:"Fasting glucose", unit:"mg/dL"},
@@ -1169,7 +1499,7 @@ function openOnboarding(existing){
   if (existing) ob = {units:existing.units, sex:existing.sex, activity:existing.activity, goal:existing.goal,
     age:existing.age, weightKg:existing.weightKg, heightCm:existing.heightCm, steps:existing.steps,
     name:existing.name||"", diet:existing.diet||"vegetarian", cuisines:existing.cuisines||["Indian"], indianStyle:existing.indianStyle||"surprise",
-    goalWeightKg:existing.goalWeightKg, conditions:existing.conditions||[]};
+    goalWeightKg:existing.goalWeightKg, conditions:existing.conditions||[], allergies:existing.allergies||"", dislikes:existing.dislikes||""};
   else ob = {units:"metric", sex:"", activity:"light", goal:"maintain", cuisines:["Indian"], indianStyle:"surprise", conditions:[]};
   renderOnboard(existing);
   document.getElementById("onboard").classList.remove("hide");
@@ -1258,6 +1588,12 @@ function renderOnboard(keepVals){
       </div>
       <div style="font-size:11px;color:var(--faint);margin-top:6px;line-height:1.4">ThaliFit only adjusts food suggestions. It never gives medical advice — your doctor sets that.</div>
     </div>
+    <div class="field"><label>Food allergies (optional) — these are strictly avoided</label>
+      <input type="text" id="obAllergies" value="${esc(ob.allergies||"")}" placeholder="e.g. peanuts, shellfish, gluten">
+    </div>
+    <div class="field"><label>Foods you dislike (optional) — the plan will skip these</label>
+      <input type="text" id="obDislikes" value="${esc(ob.dislikes||"")}" placeholder="e.g. Greek yogurt, mushrooms, olives">
+    </div>
     ${profile?`<button class="btn-ghost" style="width:100%;margin-top:10px" onclick="closeOnboarding()">Cancel</button>`:""}
     <button class="btn-main" id="obGo" style="width:100%;margin-top:${profile?"8px":"18px"}" onclick="finishOnboarding()">${AI_ENDPOINT ? "✨ Get my AI plan" : "Set my targets"}</button>
     <div id="obStatus" style="font-size:12px;color:var(--faint);text-align:center;margin-top:8px"></div>
@@ -1278,6 +1614,8 @@ function obReadFields(){
   ob.weightKg = wv ? (ob.units==="metric" ? wv : lbToKg(wv)) : undefined;
   const gw = Number(g("obGoalW")?.value)||undefined;
   ob.goalWeightKg = gw ? (ob.units==="metric" ? gw : lbToKg(gw)) : ob.goalWeightKg;
+  if (g("obAllergies")) ob.allergies = g("obAllergies").value.trim();
+  if (g("obDislikes")) ob.dislikes = g("obDislikes").value.trim();
   if (ob.units==="metric") ob.heightCm = Number(g("obHcm")?.value)||undefined;
   else {
     const ft = Number(g("obHft")?.value)||0, inch = Number(g("obHin")?.value)||0;
@@ -1293,6 +1631,7 @@ async function finishOnboarding(){
   st.textContent = AI_ENDPOINT ? "Asking AI to build your plan…" : "Calculating…";
   const p = {units:ob.units, name:ob.name||"", diet:ob.diet||"vegetarian", cuisines:(ob.cuisines&&ob.cuisines.length)?ob.cuisines:["Indian"], indianStyle:ob.indianStyle||"surprise",
     goalWeightKg: ob.goalWeightKg ? Math.round(ob.goalWeightKg*10)/10 : null, conditions: ob.conditions||[],
+    allergies: ob.allergies||"", dislikes: ob.dislikes||"",
     age:ob.age, sex:ob.sex, weightKg:Math.round(ob.weightKg*10)/10,
     heightCm:Math.round(ob.heightCm), activity:ob.activity, steps:ob.steps, goal:ob.goal, created:profile?.created || Date.now()};
   let plan = null;
@@ -1301,7 +1640,8 @@ async function finishOnboarding(){
       const r = await fetch(AI_ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({type:"plan", profile:{name:p.name||"there", diet:p.diet, cuisines:p.cuisines, indian_style:p.indianStyle, age:p.age, sex:p.sex||"unspecified", weight_kg:p.weightKg, height_cm:p.heightCm,
           bmi: calcBMI(p.weightKg,p.heightCm), activity:p.activity, avg_daily_steps:p.steps, goal:p.goal,
-          goal_weight_kg:p.goalWeightKg, conditions:p.conditions, units:p.units}})});
+          goal_weight_kg:p.goalWeightKg, conditions:p.conditions, units:p.units,
+          allergies:p.allergies||"", dislikes:p.dislikes||""}})});
       const data = await r.json();
       if (r.ok && data.plan) plan = data.plan;
     } catch(e){ /* fall through to local */ }
@@ -1344,6 +1684,7 @@ function renderProfile(){
       <button class="btn-main" onclick="openOnboarding()">Get started</button></div>`;
     return;
   }
+  const fontOptions = [["Normal",100],["Large",115],["Larger",130],["Largest",145]];
   const bmi = calcBMI(profile.weightKg, profile.heightCm);
   const latest = weights.length ? weights[weights.length-1] : null;
   const first = weights.length ? weights[0] : null;
@@ -1391,8 +1732,8 @@ function renderProfile(){
   }
 
   // Weekly check-in availability
-  const lastCheck = plan.lastCheckin || plan.created || 0;
-  const daysSince = lastCheck ? Math.floor((Date.now()-lastCheck)/86400000) : 99;
+  const lastCheck = plan.lastCheckin || plan.created || Date.now();
+  const daysSince = Math.max(0, Math.floor((Date.now()-lastCheck)/86400000));
   const checkinDue = AI_ENDPOINT && plan.daily_calories && daysSince >= 7;
   const lastResult = profile.lastCheckinResult;
 
@@ -1413,6 +1754,16 @@ function renderProfile(){
     ${journeyHtml}
 
     ${readingsCard()}
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <div><div class="serif" style="font-size:16px">Text size</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Make everything easier to read</div></div>
+        <select onchange="setFontScale(this.value)" style="font-size:13px;padding:7px 10px;width:auto;background:var(--cardsoft)">
+          ${fontOptions.map(([lbl,val])=>`<option value="${val}" ${fontScale===val?"selected":""}>${lbl}</option>`).join("")}
+        </select>
+      </div>
+    </div>
 
     ${checkinDue ? `<div class="card" style="border:1px solid var(--turmeric)">
       <div class="serif" style="font-size:17px">📋 Weekly check-in ready</div>
@@ -1491,6 +1842,7 @@ async function runCheckin(){
       body: JSON.stringify({type:"checkin", progress:{
         name: profile.name||"there", goal: profile.goal, goal_weight_kg: profile.goalWeightKg, units: profile.units,
         diet: profile.diet, conditions: profile.conditions||[], habits: plan.habits||[],
+        allergies: profile.allergies||"", dislikes: profile.dislikes||"",
         coach_notes: plan.coach_notes || "",
         calorie_target: targets.cal, protein_target: targets.protein, weekly_rate_kg: plan.weekly_rate_kg||0,
         weeks_elapsed: weeksElapsed,
@@ -1718,6 +2070,7 @@ async function getMealPlan(force){
         conditions: profile.conditions || [],
         calorie_target: targets.cal, protein_target: targets.protein,
         eaten_calories: eatenToday.cal, eaten_protein: eatenToday.protein, logged_slots: eatenToday.slots,
+        allergies: profile.allergies||"", dislikes: profile.dislikes||"",
         avoid: history.slice(-40), seed: Math.floor(Math.random()*100000)
       }})});
     const data = await r.json();
@@ -2089,8 +2442,10 @@ function startVoice(){
 document.getElementById("dateLabel").textContent = todayLabel();
 renderDayNav();
 renderTotals();
+renderWater();
 renderMeals();
 renderPlanCard();
+renderActivity();
 if (AI_ENDPOINT) {
   document.getElementById("aiBox").classList.remove("hide");
   document.getElementById("aiInput").addEventListener("keydown", e => { if (e.key === "Enter") aiParse(); });
