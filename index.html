@@ -120,10 +120,12 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
       <div class="h1" id="pageTitle">ThaliFit<span id="saveChip" class="chip"></span></div>
       <div class="sub" id="dateLabel"></div>
     </div>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn-ghost hide" id="fontBtn" onclick="cycleFontScale()" title="Text size" aria-label="Text size" style="font-family:'Fraunces',Georgia,serif;padding:6px 11px"><span style="font-size:12px">T</span><span style="font-size:17px">T</span></button>
       <button class="btn-ghost hide" id="themeBtn" onclick="toggleTheme()">☀️</button>
       <button class="btn-ghost" id="targetsBtn" onclick="toggleTargets()">Targets</button>
     </div>
+    <div id="fontToast" style="position:fixed;top:64px;right:16px;z-index:200;background:var(--turmeric);color:#1a1508;font-size:12.5px;font-weight:600;padding:6px 13px;border-radius:20px;opacity:0;transform:translateY(-6px);transition:opacity .18s,transform .18s;pointer-events:none">Normal</div>
   </div>
 
   <!-- ============ TODAY TAB ============ -->
@@ -768,12 +770,23 @@ function setTheme(t){
   updateThemeBtn();
 }
 function toggleTheme(){ setTheme(theme === "dark" ? "light" : "dark"); }
+const FONT_LEVELS = [[100,"Normal"],[115,"Large"],[130,"Larger"],[145,"Largest"]];
 function applyFontScale(){ document.documentElement.style.fontSize = (fontScale||100) + "%"; }
-function setFontScale(v){
-  fontScale = Number(v) || 100;
+function fontLevelName(v){ const f = FONT_LEVELS.find(l=>l[0]===v); return f?f[1]:"Normal"; }
+function cycleFontScale(){
+  const idx = FONT_LEVELS.findIndex(l=>l[0]===fontScale);
+  const next = FONT_LEVELS[(idx+1) % FONT_LEVELS.length];   // wrap around
+  fontScale = next[0];
   LS.set("mdp_fontscale", fontScale);
   applyFontScale();
-  renderProfile();
+  // brief confirmation toast so cycling isn't blind
+  const t = document.getElementById("fontToast");
+  if (t){
+    t.textContent = next[1];
+    t.style.opacity = "1"; t.style.transform = "translateY(0)";
+    clearTimeout(window._fontToastT);
+    window._fontToastT = setTimeout(()=>{ t.style.opacity="0"; t.style.transform="translateY(-6px)"; }, 1100);
+  }
 }
 function updateThemeBtn(){
   const b = document.getElementById("themeBtn");
@@ -1497,6 +1510,7 @@ function showTab(name){
   });
   document.getElementById("targetsBtn").classList.toggle("hide", name!=="today");
   document.getElementById("themeBtn").classList.toggle("hide", name!=="profile");
+  document.getElementById("fontBtn").classList.toggle("hide", name!=="profile");
   updateThemeBtn();
   document.getElementById("dateLabel").textContent = name==="today"
     ? todayLabel()
@@ -1763,7 +1777,6 @@ function renderProfile(){
       <button class="btn-main" onclick="openOnboarding()">Get started</button></div>`;
     return;
   }
-  const fontOptions = [["Normal",100],["Large",115],["Larger",130],["Largest",145]];
   const bmi = calcBMI(profile.weightKg, profile.heightCm);
   const latest = weights.length ? weights[weights.length-1] : null;
   const first = weights.length ? weights[0] : null;
@@ -1833,16 +1846,6 @@ function renderProfile(){
     ${journeyHtml}
 
     ${readingsCard()}
-
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-        <div><div class="serif" style="font-size:16px">Text size</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px">Make everything easier to read</div></div>
-        <select onchange="setFontScale(this.value)" style="font-size:13px;padding:7px 10px;width:auto;background:var(--cardsoft)">
-          ${fontOptions.map(([lbl,val])=>`<option value="${val}" ${fontScale===val?"selected":""}>${lbl}</option>`).join("")}
-        </select>
-      </div>
-    </div>
 
     ${checkinDue ? `<div class="card" style="border:1px solid var(--turmeric)">
       <div class="serif" style="font-size:17px">📋 Weekly check-in ready</div>
