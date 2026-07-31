@@ -1,5 +1,5 @@
-const CACHE = "thalifit-v39";
-const ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
+const CACHE = "thalifit-bold-v501";
+const ASSETS = ["./","./index.html","./manifest.json","./privacy.html","./icon-192.png","./icon-512.png","./logo-wordmark-dark.png","./logo-wordmark-light.png","./brand-mark.svg"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
