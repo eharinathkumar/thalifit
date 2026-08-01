@@ -1,4 +1,4 @@
-const CACHE = "thalifit-v5.3.1-profile-muscle-map";
+const CACHE = "thalifit-v5.3.2-wordmark-repair";
 const ASSETS = ["./","./index.html","./manifest.json","./privacy.html","./icon-192.png","./icon-512.png","./logo-wordmark-dark.png","./logo-wordmark-light.png","./brand-mark.svg"];
 
 self.addEventListener("install", e => {
