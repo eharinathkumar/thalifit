@@ -1,4 +1,4 @@
-const CACHE = "thalifit-bold-v503-cuisines-recipes";
+const CACHE = "thalifit-v5.3.1-profile-muscle-map";
 const ASSETS = ["./","./index.html","./manifest.json","./privacy.html","./icon-192.png","./icon-512.png","./logo-wordmark-dark.png","./logo-wordmark-light.png","./brand-mark.svg"];
 
 self.addEventListener("install", e => {
