@@ -95,6 +95,7 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
 .food-row .fn{flex:1;font-size:13.5px;line-height:1.3}
 .food-row .fm{font-size:11px;color:var(--muted);white-space:nowrap}
 .food-row .tag{font-size:9px;color:var(--faint);border:1px solid var(--line);border-radius:4px;padding:1px 4px}
+.recipe-chip{font-size:10px;color:var(--muted);border:1px solid var(--line);background:var(--cardsoft);border-radius:999px;padding:4px 8px;white-space:nowrap}
 .manual{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
 .manual .lbl{font-size:12px;color:var(--muted);margin-bottom:6px}
 .row2{display:flex;gap:8px;margin-top:8px}
@@ -606,7 +607,7 @@ const DB = [
 ["Boiled egg fry / muttai varuval (2)", 200, 13],
 // ============ INDIAN NON-VEG — BIRYANI ============
 // ============ CHICKEN — CHETTINAD & SOUTH INDIAN ============
-["Chicken Chettinad (1 cup)", 320, 26],
+["Chettinad chicken roast (1 cup)", 340, 30],
 ["Chicken curry / kozhi kuzhambu (1 cup)", 280, 24], ["Nattu kozhi (country chicken) curry (1 cup)", 300, 25],
 ["Chicken varuval / sukka (1 cup)", 340, 28],
 ["Chicken lollipop (4)", 320, 22],
@@ -614,7 +615,7 @@ const DB = [
 ["Chicken tikka (6 pcs)", 260, 28],
 ["Grilled chicken (quarter)", 300, 35],
 // ============ MUTTON — CHETTINAD & SOUTH INDIAN ============
-["Mutton Chettinad (1 cup)", 380, 27],
+["Chettinad mutton roast (1 cup)", 390, 29],
 ["Mutton kola urundai (4)", 320, 20], ["Aatu kaal paya (1 cup)", 220, 18],
 ["Mutton bone soup (1 cup)", 150, 12], ["Kari dosai (1)", 400, 18],
 // ============ EGG DISHES ============
@@ -634,8 +635,8 @@ const DB = [
 ["Sandesh (1)", 100, 3], ["Kalakand (1 pc)", 150, 4], ["Soan papdi (1 pc)", 150, 2],
 ["Kheer / payasam (1/2 cup)", 180, 4], ["Semiya payasam (1 cup)", 250, 6],
 ["Paruppu payasam (1 cup)", 280, 7], ["Ada pradhaman (1 cup)", 300, 4],
-["Sakkarai pongal (1 cup)", 320, 6], ["Halwa (1/2 cup)", 250, 3], ["Gajar ka halwa (1/2 cup)", 250, 4],
-["Badam halwa (1/2 cup)", 320, 6], ["Rava kesari (1/2 cup)", 280, 3], ["Kulfi (1)", 200, 5],
+["Sakkarai pongal (1 cup)", 320, 6], ["Halwa (1 tbsp)", 32, 0], ["Gajar ka halwa (1 tbsp)", 32, 1],
+["Badam halwa (1 tbsp)", 40, 1], ["Rava kesari (1 tbsp)", 35, 0], ["Kulfi (1)", 200, 5],
 ["Small Indian sweet", 150, 2], ["Small cake slice", 150, 2],
 // ============ INDIAN BEVERAGES ============
 ["Chai with milk & sugar (1 cup)", 100, 2], ["Indian tea with milk & sugar (1 cup)", 100, 2],
@@ -721,7 +722,7 @@ const DB = [
 ["Olive Garden Eggplant Parmigiana", 1060, 27], ["Olive Garden Chicken Parmigiana", 1060, 64],
 ["Olive Garden Tour of Italy", 1520, 72], ["Olive Garden Tiramisu", 470, 7],
 ["Cheese pizza (1 slice)", 285, 12], ["Veggie pizza (1 slice)", 260, 10], ["Pepperoni pizza (1 slice)", 310, 13],
-["Margherita pizza (1 slice)", 250, 10], ["Deep dish pizza (1 slice)", 380, 15], ["Personal pizza (whole, 10 in)", 700, 28],
+["Margherita pizza (1 slice)", 250, 10], ["Deep dish pizza (1 slice)", 380, 15], ["Personal pizza (4 slices, 10 in)", 700, 28],
 ["Spaghetti marinara (1.5 cups)", 350, 10], ["Fettuccine alfredo (1.5 cups)", 550, 14],
 ["Penne arrabbiata (1.5 cups)", 380, 11], ["Pasta pesto (1.5 cups)", 480, 12],
 ["Veg lasagna (1 pc)", 380, 16], ["Cheese ravioli (1 cup)", 340, 14], ["Gnocchi with sauce (1 cup)", 320, 8],
@@ -941,8 +942,8 @@ const DB = [
 ["Raisins (1 tbsp)", 30, 0], ["Peanut butter (1 tbsp)", 95, 4],
 ["Milagai podi, dry (1 tbsp)", 45, 2], ["Coconut chutney (1 tbsp)", 35, 1],
 ["Curd / yogurt (1/2 cup)", 75, 4], ["Trail mix (1 tbsp)", 45, 1],
-["Ice cream sundae (2 scoops with toppings)", 350, 5], ["Hot fudge sundae", 380, 6],
-["Ice cream (1/2 cup)", 140, 2],
+["Ice cream sundae (2 scoops with toppings)", 350, 5], ["Hot fudge sundae (2 scoops with topping)", 380, 6],
+["Vanilla ice cream (1 scoop)", 140, 2],
 // ============ SNACKS ============
 ["Chips (small serving)", 150, 2], ["Potato chips (1 oz bag)", 160, 2], ["Popcorn (3 cups)", 95, 3],
 ["Murukku (2 pcs)", 170, 2], ["Mixture / chivda (1/2 cup)", 250, 5], ["Banana chips (1/2 cup)", 210, 1],
@@ -955,9 +956,330 @@ const DB = [
 ["Coconut water (1 cup)", 46, 2], ["Orange juice (1 cup)", 110, 2], ["Soda (12 oz)", 140, 0],
 ["Diet soda (12 oz)", 0, 0], ["Beer (12 oz)", 150, 2], ["Wine (5 oz)", 125, 0],
 ["Smoothie, fruit (16 oz)", 300, 4], ["Sports drink (12 oz)", 80, 0],
+// ============ PIZZA — MORE STYLES (per slice) ============
+["Thin crust cheese pizza (1 slice)", 190, 9], ["Thin crust veggie pizza (1 slice)", 180, 8],
+["Thin crust pepperoni pizza (1 slice)", 210, 10], ["Pan cheese pizza (1 slice)", 310, 12],
+["Pan veggie pizza (1 slice)", 290, 11], ["Pan pepperoni pizza (1 slice)", 330, 14],
+["New York cheese pizza (1 slice)", 290, 12], ["Sicilian pizza (1 slice)", 350, 14],
+["Neapolitan pizza (1 slice)", 230, 9], ["White pizza (1 slice)", 300, 12],
+["Spinach feta pizza (1 slice)", 280, 12], ["Mushroom pizza (1 slice)", 250, 10],
+["Buffalo chicken pizza (1 slice)", 320, 15], ["BBQ chicken pizza (1 slice)", 330, 16],
+["Supreme pizza (1 slice)", 340, 15], ["Meat lovers pizza (1 slice)", 390, 18],
+["Cauliflower crust cheese pizza (1 slice)", 230, 10], ["Gluten-free cheese pizza (1 slice)", 260, 10],
+["Vegan cheese pizza (1 slice)", 240, 7],
+// ============ SPOONABLE INDIAN SWEETS (per tablespoon) ============
+["Wheat halwa (1 tbsp)", 40, 0], ["Atta halwa (1 tbsp)", 42, 1],
+["Moong dal halwa (1 tbsp)", 45, 1], ["Tirunelveli halwa (1 tbsp)", 45, 0],
+["Kasi halwa (1 tbsp)", 35, 0], ["Ashoka halwa (1 tbsp)", 38, 1],
+["Corn flour halwa (1 tbsp)", 32, 0], ["Milk halwa (1 tbsp)", 45, 1],
+["Beetroot halwa (1 tbsp)", 30, 0], ["Pineapple kesari (1 tbsp)", 35, 0],
+["Aval kesari (1 tbsp)", 34, 0], ["Semiya kesari (1 tbsp)", 35, 0],
+// ============ ICE CREAM & FROZEN DESSERTS (per scoop) ============
+["Chocolate ice cream (1 scoop)", 150, 3], ["Strawberry ice cream (1 scoop)", 130, 2],
+["Cookies and cream ice cream (1 scoop)", 170, 3], ["Mint chocolate chip ice cream (1 scoop)", 165, 3],
+["Butter pecan ice cream (1 scoop)", 180, 3], ["Pistachio ice cream (1 scoop)", 170, 4],
+["Mango ice cream (1 scoop)", 140, 2], ["Cookie dough ice cream (1 scoop)", 190, 3],
+["Rocky road ice cream (1 scoop)", 180, 3], ["Coconut milk ice cream (1 scoop)", 160, 2],
+["Vanilla gelato (1 scoop)", 130, 3], ["Fruit sorbet (1 scoop)", 110, 0],
+["Frozen yogurt (1 scoop)", 110, 4], ["Kulfi ice cream (1 scoop)", 180, 5],
+// ============ REGIONAL INDIAN — EVERYDAY VEGETARIAN ============
+["Ragi masala dosa (1)", 240, 6], ["Ragi idli (2)", 130, 4], ["Neer dosa (2)", 180, 3],
+["Akki roti (1)", 180, 4], ["Jowar roti (1)", 120, 4], ["Bajra roti (1)", 140, 4],
+["Ragi mudde (1 medium)", 180, 4], ["Millet pongal (1 cup)", 280, 9],
+["Millet upma (1 cup)", 230, 7], ["Kambu dosa (1)", 150, 4],
+["Adai with avial (1 plate)", 360, 12], ["Pesarattu with upma (1 plate)", 380, 13],
+["Appam with vegetable stew (2 appam)", 390, 7], ["Idiyappam with vegetable stew (2)", 340, 6],
+["Puttu with kadala curry (1 plate)", 430, 14], ["Kadala curry (1 cup)", 260, 13],
+["Cabbage thoran (1 cup)", 120, 3], ["Beans thoran (1 cup)", 130, 4],
+["Olan (1 cup)", 140, 3], ["Erissery (1 cup)", 190, 6],
+["Gongura pappu (1 cup)", 220, 12], ["Tomato pappu (1 cup)", 210, 11],
+["Palakura pappu (1 cup)", 220, 12], ["Gutti vankaya curry (1 cup)", 230, 5],
+["Sabudana khichdi (1 cup)", 350, 5], ["Thalipeeth (1)", 220, 7],
+["Misal without pav (1 cup)", 260, 13], ["Matki usal (1 cup)", 230, 13],
+["Methi thepla (1)", 130, 4], ["Handvo (1 medium piece)", 180, 7],
+["Undhiyu (1 cup)", 240, 6], ["Dal dhokli (1.5 cups)", 360, 13],
+["Gujarati kadhi (1 cup)", 170, 7], ["Cholar dal (1 cup)", 260, 11],
+["Bengali khichuri (1 cup)", 290, 9], ["Shukto (1 cup)", 160, 4],
+["Luchi with aloo dum (2 luchi)", 480, 8], ["Vegetable sagu (1 cup)", 190, 5],
+// ============ VEGETARIAN PROTEIN & PLANT-BASED STAPLES ============
+["Tempeh (100g)", 195, 20], ["Tempeh stir-fry (1 cup)", 320, 24],
+["Seitan (100g)", 140, 25], ["Firm tofu (1 cup)", 180, 21],
+["Silken tofu (1 cup)", 150, 16], ["Baked tofu (100g)", 150, 16],
+["Roasted edamame (1/2 cup)", 200, 20], ["Lentils, cooked (1 cup)", 230, 18],
+["Black beans, cooked (1 cup)", 225, 15], ["Chickpeas, cooked (1 cup)", 270, 15],
+["Kidney beans, cooked (1 cup)", 225, 15], ["White beans, cooked (1 cup)", 250, 17],
+["Split peas, cooked (1 cup)", 230, 16], ["Lupini beans (1 cup)", 200, 26],
+["TVP, cooked (1 cup)", 225, 36], ["Soy curls, cooked (1 cup)", 210, 21],
+["Lentil pasta, cooked (1.5 cups)", 330, 21], ["Chickpea pasta, cooked (1.5 cups)", 360, 20],
+["Skyr, plain (3/4 cup)", 110, 18], ["Low-fat cottage cheese (1 cup)", 180, 28],
+["String cheese (1)", 80, 7], ["Egg white omelette (4 whites)", 120, 15],
+["Hard-boiled eggs (2)", 156, 13], ["Protein oats (1 bowl)", 350, 22],
+// ============ EVERYDAY BREAKFASTS, SOUPS & LIGHT MEALS ============
+["Overnight oats (1 cup)", 300, 10], ["Greek yogurt parfait (1 cup)", 280, 18],
+["Avocado toast (1 slice)", 220, 6], ["Peanut butter toast (1 slice)", 180, 7],
+["Breakfast burrito, egg and cheese (1)", 450, 20], ["Veggie omelette (2 eggs)", 220, 14],
+["French toast (2 slices)", 360, 12], ["Pancakes (2 medium)", 300, 8],
+["Waffle (1 large)", 290, 7], ["Bagel with cream cheese (1)", 420, 13],
+["Tomato soup (1 cup)", 100, 3], ["Lentil soup (1 cup)", 190, 12],
+["Minestrone soup (1 cup)", 140, 6], ["Black bean soup (1 cup)", 220, 14],
+["Vegetable soup (1 cup)", 90, 4], ["Broccoli cheddar soup (1 cup)", 280, 10],
+["Greek salad with feta (1 bowl)", 260, 8], ["Caesar salad (1 bowl)", 330, 9],
+["Garden salad with vinaigrette (1 bowl)", 160, 4], ["Quinoa chickpea salad (1 bowl)", 420, 16],
+["Caprese sandwich (1)", 420, 18], ["Falafel salad (1 bowl)", 430, 15],
+["Grilled cheese sandwich (1)", 430, 16], ["Peanut butter and jelly sandwich (1)", 390, 14],
+["Egg salad sandwich (1)", 400, 18], ["Veggie wrap with hummus (1)", 380, 12],
+["Bean and cheese burrito (1)", 460, 19], ["Rice and bean bowl (1 bowl)", 520, 18],
+["Baked potato with cottage cheese (1)", 310, 18], ["Stuffed bell pepper, vegetarian (1)", 330, 14],
+// ============ MORE FRUITS, VEGETABLES & WHOLE-FOOD SIDES ============
+["Pear (1 medium)", 100, 1], ["Peach (1 medium)", 60, 1], ["Plum (1)", 30, 1],
+["Kiwi (2)", 85, 2], ["Cherries (1 cup)", 95, 2], ["Blackberries (1 cup)", 62, 2],
+["Blueberries (1 cup)", 85, 1], ["Strawberries (1 cup)", 50, 1], ["Cantaloupe (1 cup)", 55, 1],
+["Grapefruit (1 medium)", 80, 2], ["Dragon fruit (1 cup)", 100, 2], ["Jackfruit (1 cup)", 155, 3],
+["Roasted Brussels sprouts (1 cup)", 130, 5], ["Roasted cauliflower (1 cup)", 100, 4],
+["Roasted zucchini (1 cup)", 80, 3], ["Baked sweet potato fries (1 cup)", 180, 3],
+["Mashed potatoes (1 cup)", 240, 4], ["Baked beans, vegetarian (1 cup)", 240, 12],
 // ============ SUPPLEMENTS ============
 ["Creatine 5g", 0, 0], ["Chia seeds (1 tbsp)", 60, 2], ["Flax seeds (1 tbsp)", 55, 2],
 ];
+
+// Compact, curated subset used to assemble daily plans. Rows are:
+// name, calories, protein, cuisine, minimum diet, meal slots, common allergens.
+// Every row is also merged into the searchable DB below, so plans and logging
+// use the same canonical name and nutrition estimate.
+const PLAN_DISHES = [
+// Indian
+["Vegetable poha with peanuts (1 bowl)",320,9,"Indian","vegan","Morning","peanut"],
+["Idli with sambar (3 idli)",300,11,"Indian","vegan","Morning|Afternoon",""],
+["Pesarattu with ginger chutney (2)",390,18,"Indian","vegan","Morning|Afternoon",""],
+["Paneer tikka grain bowl (1 bowl)",520,28,"Indian","vegetarian","Afternoon|Evening","dairy"],
+["Rajma with brown rice (1 bowl)",510,20,"Indian","vegan","Afternoon|Evening",""],
+["Tofu vegetable kathi roll (1)",430,22,"Indian","vegan","Afternoon|Evening","soy|gluten"],
+["Egg bhurji with 2 rotis",460,25,"Indian","eggitarian","Morning|Afternoon|Evening","egg|gluten"],
+["Greek yogurt fruit chaat (1 bowl)",230,17,"Indian","vegetarian","Morning|Other","dairy"],
+// American
+["Oatmeal with berries and walnuts (1 bowl)",340,11,"American","vegan","Morning","tree nut|gluten"],
+["Vegetable egg scramble with toast",380,24,"American","eggitarian","Morning","egg|gluten"],
+["Cottage cheese fruit bowl (1 bowl)",280,25,"American","vegetarian","Morning|Other","dairy"],
+["Black bean quinoa power bowl (1 bowl)",500,21,"American","vegan","Afternoon|Evening",""],
+["Grilled cheese with tomato soup",530,22,"American","vegetarian","Afternoon|Evening","dairy|gluten"],
+["Roasted vegetable hummus wrap (1)",430,14,"American","vegan","Afternoon|Evening","sesame|gluten"],
+["Chicken sweet potato bowl (1 bowl)",520,40,"American","whitemeat","Afternoon|Evening",""],
+["Apple with peanut butter",190,5,"American","vegan","Other","peanut"],
+// Italian
+["Italian yogurt with berries (1 bowl)",230,18,"Italian","vegetarian","Morning|Other","dairy"],
+["Vegetable frittata (2-egg serving)",280,19,"Italian","eggitarian","Morning|Afternoon","egg|dairy"],
+["Minestrone with white beans (2 cups)",330,16,"Italian","vegan","Afternoon|Evening",""],
+["Lentil bolognese pasta (1.5 cups)",520,24,"Italian","vegan","Afternoon|Evening","gluten"],
+["Eggplant parmesan with salad",540,24,"Italian","vegetarian","Afternoon|Evening","dairy|gluten"],
+["Caprese whole-grain sandwich (1)",430,20,"Italian","vegetarian","Afternoon|Evening","dairy|gluten"],
+["Chicken primavera pasta (1.5 cups)",560,38,"Italian","whitemeat","Afternoon|Evening","gluten"],
+["Affogato-style yogurt cup",170,12,"Italian","vegetarian","Other","dairy"],
+// Mexican
+["Huevos rancheros (2 eggs)",460,24,"Mexican","eggitarian","Morning|Afternoon","egg"],
+["Chilaquiles with black beans (1 plate)",490,18,"Mexican","vegetarian","Morning|Afternoon","dairy"],
+["Tofu breakfast tacos (3)",410,23,"Mexican","vegan","Morning|Afternoon","soy"],
+["Black bean fajita bowl (1 bowl)",510,20,"Mexican","vegan","Afternoon|Evening",""],
+["Vegetable enchiladas (2)",480,19,"Mexican","vegetarian","Afternoon|Evening","dairy"],
+["Chicken street tacos (3)",450,35,"Mexican","whitemeat","Afternoon|Evening",""],
+["Lentil taco salad (1 bowl)",420,21,"Mexican","vegan","Afternoon|Evening",""],
+["Mango lime yogurt cup",190,14,"Mexican","vegetarian","Other","dairy"],
+// Thai
+["Thai coconut oatmeal with mango",350,9,"Thai","vegan","Morning","tree nut|gluten"],
+["Thai tofu lettuce cups (4)",330,22,"Thai","vegan","Afternoon|Evening","soy"],
+["Vegetable green curry with rice (1 bowl)",540,15,"Thai","vegan","Afternoon|Evening","tree nut"],
+["Basil tofu with brown rice (1 bowl)",500,24,"Thai","vegan","Afternoon|Evening","soy"],
+["Thai peanut noodle salad (1 bowl)",510,19,"Thai","vegan","Afternoon|Evening","peanut|gluten"],
+["Chicken larb with rice (1 bowl)",470,37,"Thai","whitemeat","Afternoon|Evening","fish"],
+["Tom yum tofu soup with rice",390,20,"Thai","vegan","Afternoon|Evening","soy"],
+["Mango sticky rice, light portion",220,3,"Thai","vegan","Other",""],
+// Chinese
+["Savory scallion oatmeal with egg",340,18,"Chinese","eggitarian","Morning","egg|gluten"],
+["Vegetable congee with tofu (1 bowl)",320,17,"Chinese","vegan","Morning|Afternoon","soy"],
+["Mapo tofu, vegetarian, with rice",520,25,"Chinese","vegan","Afternoon|Evening","soy"],
+["Broccoli tofu stir-fry with rice",480,24,"Chinese","vegan","Afternoon|Evening","soy"],
+["Vegetable dumpling soup (8 dumplings)",420,16,"Chinese","vegan","Afternoon|Evening","soy|gluten"],
+["Egg fried rice with vegetables (1.5 cups)",450,17,"Chinese","eggitarian","Afternoon|Evening","egg|soy"],
+["Chicken and broccoli with rice",520,42,"Chinese","whitemeat","Afternoon|Evening","soy"],
+["Orange slices with five-spice yogurt",170,13,"Chinese","vegetarian","Other","dairy"],
+// Mediterranean
+["Greek yogurt oats with dates",360,20,"Mediterranean","vegetarian","Morning","dairy|gluten"],
+["Shakshuka with whole-grain pita",440,24,"Mediterranean","eggitarian","Morning|Afternoon","egg|gluten"],
+["Falafel quinoa bowl (1 bowl)",520,20,"Mediterranean","vegan","Afternoon|Evening","sesame"],
+["Lentil tabbouleh bowl (1 bowl)",450,20,"Mediterranean","vegan","Afternoon|Evening","gluten"],
+["Stuffed peppers with chickpeas (2 halves)",430,18,"Mediterranean","vegan","Afternoon|Evening",""],
+["Grilled halloumi vegetable plate",480,24,"Mediterranean","vegetarian","Afternoon|Evening","dairy"],
+["Lemon herb chicken couscous bowl",540,42,"Mediterranean","whitemeat","Afternoon|Evening","gluten"],
+["Hummus with vegetables and pita",260,9,"Mediterranean","vegan","Other","sesame|gluten"],
+// Japanese
+["Miso oatmeal with soft-boiled egg",330,18,"Japanese","eggitarian","Morning","egg|soy|gluten"],
+["Tofu miso soup with rice (1 bowl)",360,18,"Japanese","vegan","Morning|Afternoon","soy"],
+["Vegetable sushi bowl with edamame",470,20,"Japanese","vegan","Afternoon|Evening","soy"],
+["Teriyaki tofu with brown rice",520,25,"Japanese","vegan","Afternoon|Evening","soy|gluten"],
+["Vegetable soba noodle bowl",460,18,"Japanese","vegan","Afternoon|Evening","soy|gluten"],
+["Tamago rice bowl with vegetables",430,20,"Japanese","eggitarian","Afternoon|Evening","egg|soy"],
+["Salmon rice bowl with cucumber",520,36,"Japanese","whitemeat","Afternoon|Evening","fish|soy"],
+["Edamame with sea salt (1 cup)",190,17,"Japanese","vegan","Other","soy"],
+// Korean
+["Korean vegetable rice porridge",310,10,"Korean","vegan","Morning","soy"],
+["Kimchi tofu scramble with rice",410,23,"Korean","vegan","Morning|Afternoon","soy"],
+["Vegetable bibimbap with tofu",520,24,"Korean","vegan","Afternoon|Evening","soy|sesame"],
+["Kimchi fried rice with egg",470,18,"Korean","eggitarian","Afternoon|Evening","egg|soy|sesame"],
+["Korean lentil lettuce wraps",390,21,"Korean","vegan","Afternoon|Evening","soy|sesame"],
+["Chicken bulgogi rice bowl",550,40,"Korean","whitemeat","Afternoon|Evening","soy|sesame"],
+["Soft tofu stew, vegetarian, with rice",440,24,"Korean","vegan","Afternoon|Evening","soy"],
+["Roasted seaweed and edamame snack",150,13,"Korean","vegan","Other","soy|sesame"],
+// Vietnamese
+["Vietnamese tofu breakfast banh mi",420,20,"Vietnamese","vegan","Morning|Afternoon","soy|gluten"],
+["Vegetable pho with tofu (1 large bowl)",430,21,"Vietnamese","vegan","Afternoon|Evening","soy"],
+["Lemongrass tofu rice bowl",500,24,"Vietnamese","vegan","Afternoon|Evening","soy"],
+["Fresh vegetable spring rolls (4)",340,12,"Vietnamese","vegan","Afternoon|Evening","peanut|soy"],
+["Vietnamese chicken vermicelli bowl",520,38,"Vietnamese","whitemeat","Afternoon|Evening","fish"],
+["Tofu papaya salad with rice",450,22,"Vietnamese","vegan","Afternoon|Evening","peanut|soy"],
+["Mango chia coconut cup",210,5,"Vietnamese","vegan","Other","tree nut"],
+// Filipino
+["Garlic rice with egg and tomatoes",390,17,"Filipino","eggitarian","Morning","egg"],
+["Tofu sisig rice bowl",510,25,"Filipino","vegan","Afternoon|Evening","soy"],
+["Vegetable pancit with tofu",480,22,"Filipino","vegan","Afternoon|Evening","soy|gluten"],
+["Mung bean stew with rice",460,21,"Filipino","vegan","Afternoon|Evening",""],
+["Chicken adobo with brown rice",540,40,"Filipino","whitemeat","Afternoon|Evening","soy"],
+["Pinakbet with tofu and rice",470,22,"Filipino","vegan","Afternoon|Evening","soy"],
+["Banana coconut yogurt cup",200,12,"Filipino","vegetarian","Other","dairy|tree nut"],
+// Indonesian
+["Tempeh vegetable breakfast bowl",390,24,"Indonesian","vegan","Morning","soy"],
+["Gado-gado with tempeh (1 bowl)",500,25,"Indonesian","vegan","Afternoon|Evening","peanut|soy"],
+["Vegetable nasi goreng with tofu",520,23,"Indonesian","vegan","Afternoon|Evening","soy"],
+["Tempeh satay with rice and vegetables",530,29,"Indonesian","vegan","Afternoon|Evening","peanut|soy"],
+["Red lentil rendang with rice",510,22,"Indonesian","vegan","Afternoon|Evening","tree nut"],
+["Chicken soto with rice",460,34,"Indonesian","whitemeat","Afternoon|Evening",""],
+["Papaya lime bowl with peanuts",190,5,"Indonesian","vegan","Other","peanut"],
+// Malaysian
+["Malaysian tofu coconut oats",360,16,"Malaysian","vegan","Morning","soy|tree nut|gluten"],
+["Vegetable laksa with tofu",560,24,"Malaysian","vegan","Afternoon|Evening","soy|tree nut"],
+["Nasi lemak-style tempeh bowl",540,25,"Malaysian","vegan","Afternoon|Evening","peanut|soy|tree nut"],
+["Mee goreng with tofu and vegetables",520,23,"Malaysian","vegan","Afternoon|Evening","soy|gluten"],
+["Chickpea potato curry with rice",500,19,"Malaysian","vegan","Afternoon|Evening","tree nut"],
+["Chicken satay rice bowl",530,39,"Malaysian","whitemeat","Afternoon|Evening","peanut|soy"],
+["Pineapple cucumber salad",140,3,"Malaysian","vegan","Other","peanut"],
+// Ethiopian
+["Injera with lentil scramble",390,20,"Ethiopian","vegan","Morning|Afternoon","gluten"],
+["Misir wot with injera (1 plate)",500,24,"Ethiopian","vegan","Afternoon|Evening","gluten"],
+["Shiro with injera (1 plate)",480,22,"Ethiopian","vegan","Afternoon|Evening","gluten"],
+["Atakilt wat with lentils and injera",470,18,"Ethiopian","vegan","Afternoon|Evening","gluten"],
+["Gomen with chickpeas and injera",460,20,"Ethiopian","vegan","Afternoon|Evening","gluten"],
+["Doro wat with egg and injera",590,42,"Ethiopian","whitemeat","Afternoon|Evening","egg|gluten"],
+["Spiced roasted chickpeas (1/2 cup)",210,10,"Ethiopian","vegan","Other",""],
+// Caribbean
+["Plantain black bean breakfast bowl",420,15,"Caribbean","vegan","Morning",""],
+["Jamaican chickpea curry with rice",510,20,"Caribbean","vegan","Afternoon|Evening","tree nut"],
+["Rice and peas with tofu (1 bowl)",520,23,"Caribbean","vegan","Afternoon|Evening","soy|tree nut"],
+["Jerk tempeh sweet potato bowl",500,26,"Caribbean","vegan","Afternoon|Evening","soy"],
+["Callaloo with beans and rice",470,19,"Caribbean","vegan","Afternoon|Evening","tree nut"],
+["Jerk chicken rice bowl",540,42,"Caribbean","whitemeat","Afternoon|Evening",""],
+["Pineapple coconut chia cup",210,5,"Caribbean","vegan","Other","tree nut"],
+// Brazilian
+["Brazilian egg tapioca crepe",360,20,"Brazilian","eggitarian","Morning","egg|dairy"],
+["Black bean rice bowl with greens",500,21,"Brazilian","vegan","Afternoon|Evening",""],
+["Moqueca-style tofu with rice",520,24,"Brazilian","vegan","Afternoon|Evening","soy|tree nut"],
+["Hearts of palm quinoa salad",390,14,"Brazilian","vegan","Afternoon|Evening",""],
+["Lentil feijoada with rice",520,24,"Brazilian","vegan","Afternoon|Evening",""],
+["Chicken picadinho with rice",550,40,"Brazilian","whitemeat","Afternoon|Evening",""],
+["Papaya yogurt bowl",190,14,"Brazilian","vegetarian","Other","dairy"],
+// Greek
+["Greek yogurt walnut breakfast bowl",340,23,"Greek","vegetarian","Morning","dairy|tree nut"],
+["Spinach feta egg pita",410,24,"Greek","eggitarian","Morning|Afternoon","egg|dairy|gluten"],
+["Gigantes bean bowl with pita",470,20,"Greek","vegan","Afternoon|Evening","gluten"],
+["Lentil Greek salad with feta",430,23,"Greek","vegetarian","Afternoon|Evening","dairy"],
+["Vegetarian moussaka with salad",520,22,"Greek","vegetarian","Afternoon|Evening","dairy"],
+["Lemon chicken orzo bowl",540,41,"Greek","whitemeat","Afternoon|Evening","gluten"],
+["Tzatziki vegetables and pita",230,10,"Greek","vegetarian","Other","dairy|gluten"],
+// Turkish
+["Menemen with whole-grain bread",400,22,"Turkish","eggitarian","Morning","egg|gluten"],
+["Lentil soup with bulgur bread",430,20,"Turkish","vegan","Afternoon|Evening","gluten"],
+["Imam bayildi with chickpeas",440,16,"Turkish","vegan","Afternoon|Evening",""],
+["Mercimek kofte salad plate",420,19,"Turkish","vegan","Afternoon|Evening","gluten"],
+["Vegetable bulgur pilaf with yogurt",460,18,"Turkish","vegetarian","Afternoon|Evening","dairy|gluten"],
+["Chicken kebab bulgur bowl",540,43,"Turkish","whitemeat","Afternoon|Evening","gluten"],
+["Cucumber yogurt walnut cup",210,12,"Turkish","vegetarian","Other","dairy|tree nut"],
+// Lebanese
+["Labneh vegetable breakfast pita",390,19,"Lebanese","vegetarian","Morning","dairy|gluten"],
+["Ful medames with pita",440,21,"Lebanese","vegan","Morning|Afternoon","gluten"],
+["Mujadara with cucumber salad",500,21,"Lebanese","vegan","Afternoon|Evening",""],
+["Falafel fattoush bowl",480,18,"Lebanese","vegan","Afternoon|Evening","gluten|sesame"],
+["Chickpea spinach stew with rice",470,19,"Lebanese","vegan","Afternoon|Evening",""],
+["Chicken shawarma grain bowl",550,42,"Lebanese","whitemeat","Afternoon|Evening","sesame"],
+["Hummus cucumber snack box",220,8,"Lebanese","vegan","Other","sesame"],
+// Persian
+["Herbed egg kuku with bread",390,23,"Persian","eggitarian","Morning|Afternoon","egg|gluten"],
+["Adasi lentil bowl with bread",410,22,"Persian","vegan","Morning|Afternoon","gluten"],
+["Adas polo with tofu",510,23,"Persian","vegan","Afternoon|Evening","soy"],
+["Ghormeh sabzi with kidney beans and rice",520,20,"Persian","vegan","Afternoon|Evening",""],
+["Fesenjan-style lentils with rice",540,20,"Persian","vegan","Afternoon|Evening","tree nut"],
+["Saffron chicken rice bowl",550,41,"Persian","whitemeat","Afternoon|Evening",""],
+["Cucumber mint yogurt with walnuts",200,13,"Persian","vegetarian","Other","dairy|tree nut"],
+// Spanish
+["Spanish tomato toast with egg",370,18,"Spanish","eggitarian","Morning","egg|gluten"],
+["Tortilla espanola with side salad",430,20,"Spanish","eggitarian","Morning|Afternoon","egg"],
+["Chickpea spinach stew (1 bowl)",430,21,"Spanish","vegan","Afternoon|Evening",""],
+["Vegetable paella with beans",520,18,"Spanish","vegan","Afternoon|Evening",""],
+["White bean roasted pepper bowl",420,20,"Spanish","vegan","Afternoon|Evening",""],
+["Chicken vegetable paella",560,39,"Spanish","whitemeat","Afternoon|Evening",""],
+["Orange almond yogurt cup",210,14,"Spanish","vegetarian","Other","dairy|tree nut"],
+// French
+["Berry yogurt muesli bowl",350,21,"French","vegetarian","Morning","dairy|gluten"],
+["Vegetable omelette with toast",390,23,"French","eggitarian","Morning|Afternoon","egg|dairy|gluten"],
+["Lentil vegetable cassoulet",480,24,"French","vegan","Afternoon|Evening",""],
+["Ratatouille with white beans and quinoa",470,20,"French","vegan","Afternoon|Evening",""],
+["Mushroom spinach crepes (2)",460,20,"French","vegetarian","Afternoon|Evening","dairy|gluten"],
+["Herbed chicken with lentils",520,44,"French","whitemeat","Afternoon|Evening",""],
+["Pear with yogurt and cinnamon",180,13,"French","vegetarian","Other","dairy"],
+// West African
+["Millet porridge with peanuts",350,12,"West African","vegan","Morning","peanut"],
+["Black-eyed pea stew with rice",500,23,"West African","vegan","Afternoon|Evening",""],
+["Red lentil jollof rice bowl",520,20,"West African","vegan","Afternoon|Evening",""],
+["Groundnut tofu stew with greens",540,25,"West African","vegan","Afternoon|Evening","peanut|soy"],
+["Egusi-style bean and spinach stew",500,22,"West African","vegan","Afternoon|Evening","seed"],
+["Chicken jollof rice bowl",560,41,"West African","whitemeat","Afternoon|Evening",""],
+["Spiced plantain with roasted chickpeas",230,8,"West African","vegan","Other",""],
+// Eastern European
+["Buckwheat porridge with yogurt and berries",340,19,"Eastern European","vegetarian","Morning","dairy"],
+["Vegetable egg potato skillet",410,22,"Eastern European","eggitarian","Morning|Afternoon","egg"],
+["Lentil borscht with rye bread",430,21,"Eastern European","vegan","Afternoon|Evening","gluten"],
+["Mushroom cabbage pierogi (6)",480,16,"Eastern European","vegetarian","Afternoon|Evening","dairy|gluten"],
+["Stuffed cabbage with lentils (2 rolls)",450,20,"Eastern European","vegan","Afternoon|Evening",""],
+["Paprika chicken with potatoes",540,42,"Eastern European","whitemeat","Afternoon|Evening","dairy"],
+["Cottage cheese cucumber rye toast",230,17,"Eastern European","vegetarian","Other","dairy|gluten"],
+// Vegan slot coverage for flexible profiles
+["Roasted chana with cucumber and lime",180,9,"Indian","vegan","Other",""],
+["Tuscan white bean breakfast toast",360,17,"Italian","vegan","Morning","gluten"],
+["Tomato basil white bean crostini",210,9,"Italian","vegan","Other","gluten"],
+["Jicama cucumber lime cup",120,3,"Mexican","vegan","Other",""],
+["Sesame cucumber edamame cup",170,13,"Chinese","vegan","Other","soy|sesame"],
+["Hummus tomato breakfast pita",350,13,"Mediterranean","vegan","Morning","sesame|gluten"],
+["Filipino coconut rice porridge",340,7,"Filipino","vegan","Morning","tree nut"],
+["Banana with roasted peanuts",190,6,"Filipino","vegan","Other","peanut"],
+["Acai oat breakfast bowl",360,9,"Brazilian","vegan","Morning","gluten"],
+["Brazilian fruit cup with roasted cashews",200,5,"Brazilian","vegan","Other","tree nut"],
+["Tahini banana breakfast toast",350,11,"Greek","vegan","Morning","sesame|gluten"],
+["Greek olives with roasted chickpeas",190,8,"Greek","vegan","Other",""],
+["Greek lemon lentil soup (2 cups)",380,20,"Greek","vegan","Afternoon|Evening",""],
+["Simit with tomato and cucumber",340,11,"Turkish","vegan","Morning","sesame|gluten"],
+["Turkish spiced roasted chickpeas",190,9,"Turkish","vegan","Other",""],
+["Dates with walnuts (2 dates)",170,3,"Persian","vegan","Other","tree nut"],
+["Spanish tomato white bean toast",360,16,"Spanish","vegan","Morning","gluten"],
+["Spanish olives with roasted chickpeas",180,8,"Spanish","vegan","Other",""],
+["Pear almond butter tartine",350,10,"French","vegan","Morning","tree nut|gluten"],
+["French white bean herb dip with vegetables",190,9,"French","vegan","Other",""],
+["Apple buckwheat porridge with oat milk",350,11,"Eastern European","vegan","Morning","gluten"],
+["Beet white bean dip with rye crisps",210,9,"Eastern European","vegan","Other","gluten"],
+];
+
+const dbNameSet = new Set(DB.map(([name]) => name.toLowerCase()));
+PLAN_DISHES.forEach(([name, calories, protein]) => {
+  if (!dbNameSet.has(name.toLowerCase())) {
+    DB.push([name, calories, protein]);
+    dbNameSet.add(name.toLowerCase());
+  }
+});
 
 const DEFAULT_FOODS = [
   {id:"f1", name:"Protein smoothie (Orgain 2 scoops, almond milk, berries, banana, chia)", cal:480, protein:27, meal:"Morning"},
@@ -1049,6 +1371,39 @@ function estimateMacros(name, cal, protein){
   const fat = Math.round((rem*fatShare)/9);
   const carbs = Math.max(0, Math.round((rem - fat*9)/4));
   return {carbs, fat};
+}
+
+// Defensive display normalization for AI results. The Worker already enforces
+// these rules; keeping the same small guard in the client protects users while
+// an older Worker deployment is still being replaced.
+function normalizeSpecialPortionName(name){
+  let out = String(name || "").trim();
+  if (!out) return out;
+  const parseAmount = raw => {
+    const s = String(raw).trim().replace("¼","1/4").replace("½","1/2").replace("¾","3/4");
+    if (s.includes("/")){ const [a,b] = s.split("/").map(Number); return b ? a/b : 0; }
+    return Number(s)||0;
+  };
+  const nice = n => Number.isInteger(n) ? String(n) : String(Math.round(n*10)/10);
+  const cupPattern = /(\d+(?:\.\d+)?|\d+\s*\/\s*\d+|[¼½¾])\s*cups?/i;
+  if (/\b(halwa|kesari)\b/i.test(out)){
+    out = out.replace(/\btablespoons?\b/gi,"tbsp");
+    const cup = out.match(cupPattern);
+    if (cup) out = out.replace(cup[0], nice(parseAmount(cup[1])*16)+" tbsp");
+    if (!/\btbsp\b/i.test(out)) out += " (1 tbsp)";
+  }
+  if (/\b(ice cream|gelato|sorbet|frozen yog(?:urt|hurt))\b/i.test(out)){
+    const cup = out.match(cupPattern);
+    if (cup) out = out.replace(cup[0], nice(parseAmount(cup[1])*2)+" scoops");
+    out = out.replace(/\b1 scoops\b/gi,"1 scoop");
+    if (!/\bscoops?\b/i.test(out)) out += " (1 scoop)";
+  }
+  if (/\bpizza\b/i.test(out) && !/taco bell mexican pizza/i.test(out) && !/\bslices?\b/i.test(out)){
+    const pieces = out.match(/\b(\d+(?:\.\d+)?)\s*(?:pieces?|pcs|wedges?)\b/i);
+    if (pieces) out = out.replace(pieces[0], nice(Number(pieces[1]))+(Number(pieces[1])===1?" slice":" slices"));
+    else out += " (1 slice)";
+  }
+  return out.replace(/\s+/g," ").trim();
 }
 
 // ================= Barcode scanner (Android Chrome BarcodeDetector) =================
@@ -1952,7 +2307,10 @@ function localPlan(p){
 }
 
 // ================= Onboarding =================
-const CUISINES = ["Indian","American","Italian","Mexican","Thai","Chinese","Mediterranean","Japanese","Korean"];
+const PRIMARY_CUISINES = ["Indian","American","Italian","Mexican","Thai","Chinese","Mediterranean","Japanese","Korean"];
+const MORE_CUISINES = ["Vietnamese","Filipino","Indonesian","Malaysian","Ethiopian","Caribbean","Brazilian","Greek","Turkish","Lebanese","Persian","Spanish","French","West African","Eastern European"];
+const CUISINES = [...PRIMARY_CUISINES, ...MORE_CUISINES];
+let showMoreCuisines = false;
 const CONDITIONS = [
   {k:"diabetes_t2", label:"Type 2 diabetes"},
   {k:"diabetes_t1", label:"Type 1 diabetes"},
@@ -1967,13 +2325,14 @@ function toggleCondition(c){
   ob.conditions = (ob.conditions||[]).includes(c) ? ob.conditions.filter(x=>x!==c) : [...(ob.conditions||[]), c];
   renderOnboard(true);
 }
-let ob = {units:"metric", sex:"", activity:"light", goal:"maintain", cuisines:["Indian"], indianStyle:"surprise", conditions:[]};
+let ob = {units:"metric", sex:"", activity:"light", goal:"maintain", cuisines:["Indian"], indianStyle:"surprise", exploreCuisines:false, conditions:[]};
 let obStep = 1;
 function toggleCuisine(c){
   obReadFields();
   ob.cuisines = (ob.cuisines||[]).includes(c) ? ob.cuisines.filter(x=>x!==c) : [...(ob.cuisines||[]), c];
   renderOnboard(true);
 }
+function toggleMoreCuisines(){ obReadFields(); showMoreCuisines = !showMoreCuisines; renderOnboard(true); }
 function closeOnboarding(){
   document.getElementById("onboard").classList.add("hide");
   renderProfile();
@@ -1982,9 +2341,9 @@ function openOnboarding(existing){
   obStep = 1;
   if (existing) ob = {units:existing.units, sex:existing.sex, activity:existing.activity, goal:existing.goal,
     age:existing.age, weightKg:existing.weightKg, heightCm:existing.heightCm, steps:existing.steps,
-    name:existing.name||"", diet:existing.diet||"vegetarian", cuisines:existing.cuisines||["Indian"], indianStyle:existing.indianStyle||"surprise",
+    name:existing.name||"", diet:existing.diet||"vegetarian", cuisines:existing.cuisines||["Indian"], indianStyle:existing.indianStyle||"surprise", exploreCuisines:!!existing.exploreCuisines,
     goalWeightKg:existing.goalWeightKg, conditions:existing.conditions||[], allergies:existing.allergies||"", dislikes:existing.dislikes||""};
-  else ob = {units:"metric", sex:"", activity:"light", goal:"maintain", cuisines:["Indian"], indianStyle:"surprise", conditions:[]};
+  else ob = {units:"metric", sex:"", activity:"light", goal:"maintain", cuisines:["Indian"], indianStyle:"surprise", exploreCuisines:false, conditions:[]};
   renderOnboard(existing);
   document.getElementById("onboard").classList.remove("hide");
 }
@@ -1995,6 +2354,8 @@ function obNext(step){
 }
 function renderOnboard(keepVals){
   const metric = ob.units==="metric";
+  const selectedExtraCuisines = MORE_CUISINES.filter(c => (ob.cuisines||[]).includes(c));
+  const visibleCuisineChoices = showMoreCuisines ? CUISINES : [...PRIMARY_CUISINES, ...selectedExtraCuisines];
   const w = ob.weightKg ? (metric ? Math.round(ob.weightKg*10)/10 : Math.round(kgToLb(ob.weightKg)*10)/10) : "";
   const hcm = ob.heightCm || "";
   const fi = ob.heightCm ? cmToFtIn(ob.heightCm) : {ft:"",inch:""};
@@ -2047,8 +2408,11 @@ function renderOnboard(keepVals){
     </section><section class="ob-step ${obStep===2?"":"hide"}"><div class="ob-step-label">Step 2 of 3</div><div class="ob-step-title">Your routine and goal</div>
     <div class="field"><label>Cuisines you enjoy (tap all that apply)</label>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${CUISINES.map(c=>`<button type="button" class="cuisine-chip ${(ob.cuisines||[]).includes(c)?"on":""}" onclick="toggleCuisine('${c}')">${c}</button>`).join("")}
-      </div></div>
+        ${visibleCuisineChoices.map(c=>`<button type="button" class="cuisine-chip ${(ob.cuisines||[]).includes(c)?"on":""}" onclick="toggleCuisine('${c}')">${c}</button>`).join("")}
+        <button type="button" class="cuisine-chip" onclick="toggleMoreCuisines()">${showMoreCuisines?"Show fewer":"＋ More cuisines"}</button>
+      </div>
+      <label class="checkline" style="margin-top:10px"><input type="checkbox" id="obExplore" ${ob.exploreCuisines?"checked":""} onchange="ob.exploreCuisines=this.checked">Help me explore — occasionally include one compatible dish from a new cuisine</label>
+    </div>
     ${(ob.cuisines||[]).includes("Indian") ? `<div class="field"><label>Indian food — any leaning?</label>
       <div class="seg">
         <button class="${ob.indianStyle==="north"?"on":""}" onclick="obReadFields();obSet('indianStyle','north')">North</button>
@@ -2109,6 +2473,7 @@ function obReadFields(){
   ob.goalWeightKg = gw ? (ob.units==="metric" ? gw : lbToKg(gw)) : ob.goalWeightKg;
   if (g("obAllergies")) ob.allergies = g("obAllergies").value.trim();
   if (g("obDislikes")) ob.dislikes = g("obDislikes").value.trim();
+  if (g("obExplore")) ob.exploreCuisines = g("obExplore").checked;
   if (ob.units==="metric") ob.heightCm = Number(g("obHcm")?.value)||undefined;
   else {
     const ft = Number(g("obHft")?.value)||0, inch = Number(g("obHin")?.value)||0;
@@ -2126,7 +2491,7 @@ async function finishOnboarding(){
   const goBtn = document.getElementById("obGo");
   if (goBtn){ goBtn.disabled = true; goBtn.style.opacity = "0.5"; goBtn.textContent = AI_ENDPOINT ? "✨ Building your plan…" : "Calculating…"; }
   st.textContent = AI_ENDPOINT ? "Asking AI to build your plan…" : "Calculating…";
-  const p = {units:ob.units, name:ob.name||"", diet:ob.diet||"vegetarian", cuisines:(ob.cuisines&&ob.cuisines.length)?ob.cuisines:["Indian"], indianStyle:ob.indianStyle||"surprise",
+  const p = {units:ob.units, name:ob.name||"", diet:ob.diet||"vegetarian", cuisines:(ob.cuisines&&ob.cuisines.length)?ob.cuisines:["Indian"], indianStyle:ob.indianStyle||"surprise", exploreCuisines:!!ob.exploreCuisines,
     goalWeightKg: ob.goalWeightKg ? Math.round(ob.goalWeightKg*10)/10 : null, conditions: ob.conditions||[],
     allergies: ob.allergies||"", dislikes: ob.dislikes||"",
     age:ob.age, sex:ob.sex, weightKg:Math.round(ob.weightKg*10)/10,
@@ -2135,7 +2500,7 @@ async function finishOnboarding(){
   if (AI_ENDPOINT){
     try {
       const r = await fetch(AI_ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({type:"plan", profile:{name:p.name||"there", diet:p.diet, cuisines:p.cuisines, indian_style:p.indianStyle, age:p.age, sex:p.sex||"unspecified", weight_kg:p.weightKg, height_cm:p.heightCm,
+        body: JSON.stringify({type:"plan", profile:{name:p.name||"there", diet:p.diet, cuisines:p.cuisines, indian_style:p.indianStyle, explore_cuisines:p.exploreCuisines, age:p.age, sex:p.sex||"unspecified", weight_kg:p.weightKg, height_cm:p.heightCm,
           bmi: calcBMI(p.weightKg,p.heightCm), activity:p.activity, avg_daily_steps:p.steps, goal:p.goal,
           goal_weight_kg:p.goalWeightKg, conditions:p.conditions, units:p.units,
           allergies:p.allergies||"", dislikes:p.dislikes||""}})});
@@ -2422,6 +2787,10 @@ function renderProfileFull(){
         <div class="stat"><div class="v">${fmtW(cur).split(" ")[0]}</div><div class="k">${profile.units==="metric"?"kg":"lb"}</div></div>
       </div>
       <button class="link" style="margin-top:10px" onclick="document.getElementById('bmiModal').classList.remove('hide')">What does my BMI mean & how to measure it right →</button>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--faint);margin-bottom:7px">PLAN CUISINES</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${(profile.cuisines||["Indian"]).map(c=>`<span class="recipe-chip">${esc(c)}</span>`).join("")}${profile.exploreCuisines?`<span class="recipe-chip" style="color:var(--turmeric)">＋ Exploring</span>`:""}</div>
+      </div>
     </div>
 
     ${journeyHtml}
@@ -2883,6 +3252,56 @@ function renderWeightTrend(){
 }
 
 // ================= Daily AI meal plan =================
+const DIET_ACCESS = {
+  vegan: new Set(["vegan"]),
+  vegetarian: new Set(["vegan","vegetarian"]),
+  eggitarian: new Set(["vegan","vegetarian","eggitarian"]),
+  whitemeat: new Set(["vegan","vegetarian","eggitarian","whitemeat"]),
+  meat: new Set(["vegan","vegetarian","eggitarian","whitemeat","meat"]),
+};
+function stablePlanRank(text){
+  let h = 2166136261;
+  for (const ch of String(text)){ h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function requestedAllergenTags(text){
+  const s = String(text||"").toLowerCase();
+  const tags = new Set();
+  const addIf = (re, tag) => { if (re.test(s)) tags.add(tag); };
+  addIf(/peanut|groundnut/,"peanut"); addIf(/tree nut|almond|cashew|walnut|pecan|pistachio|hazelnut/,"tree nut");
+  addIf(/milk|dairy|lactose|cheese/,"dairy"); addIf(/\begg/,"egg"); addIf(/gluten|wheat/,"gluten");
+  addIf(/soy|soya/,"soy"); addIf(/sesame|tahini/,"sesame"); addIf(/shellfish|shrimp|prawn|crab|lobster/,"shellfish");
+  addIf(/\bfish|salmon|tuna|cod/,"fish"); addIf(/seed/,"seed");
+  return tags;
+}
+function buildMealPlanCandidates(p, history, seed){
+  const pickedCuisines = (p.cuisines&&p.cuisines.length?p.cuisines:["Indian"]).filter(c=>CUISINES.includes(c));
+  const selected = new Set(pickedCuisines.length ? pickedCuisines : ["Indian"]);
+  const allowed = DIET_ACCESS[p.diet] || DIET_ACCESS.vegetarian;
+  const allergyTags = requestedAllergenTags(p.allergies);
+  const dislikes = String(p.dislikes||"").toLowerCase().split(/[,;\n]/).map(x=>x.trim()).filter(x=>x.length>=3);
+  const recent = new Set((history||[]).slice(-40).map(x=>String(x).toLowerCase()));
+  const safe = PLAN_DISHES.filter(d => {
+    if (!allowed.has(d[4])) return false;
+    const tags = new Set(String(d[6]||"").split("|").filter(Boolean));
+    if ([...allergyTags].some(a=>tags.has(a))) return false;
+    const n = d[0].toLowerCase();
+    if (dislikes.some(x=>n.includes(x))) return false;
+    return true;
+  });
+  const rank = d => stablePlanRank(d[0]+"|"+seed) + (recent.has(d[0].toLowerCase()) ? 4000000000 : 0);
+  const selectedList = [...selected];
+  const perCuisine = Math.max(3,Math.min(12,Math.floor((p.exploreCuisines?64:72)/Math.max(1,selectedList.length))));
+  let chosen = selectedList.flatMap(c=>safe.filter(d=>d[3]===c).sort((a,b)=>rank(a)-rank(b)).slice(0,perCuisine));
+  if (p.exploreCuisines){
+    const extras = CUISINES.filter(c=>!selected.has(c) && safe.some(d=>d[3]===c));
+    if (extras.length){
+      const exploreCuisine = extras[stablePlanRank(dateKey+"|"+seed) % extras.length];
+      chosen = [...chosen, ...safe.filter(d=>d[3]===exploreCuisine).sort((a,b)=>rank(a)-rank(b)).slice(0,7)];
+    }
+  }
+  return chosen.slice(0,72).map(d=>({name:d[0],calories:d[1],protein_g:d[2],cuisine:d[3],meal_slots:d[5]}));
+}
 let planCollapsed = LS.get("mdp_plan_collapsed", false);
 function togglePlanCard(){
   planCollapsed = !planCollapsed;
@@ -2928,6 +3347,7 @@ function renderPlanCard(){
       ${(m.items||[]).map((it,ii)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px">
         <span style="flex:1;line-height:1.35">${esc(it.name)}</span>
         <span style="color:var(--muted);font-size:11px;white-space:nowrap">${it.calories} · ${it.protein_g}g</span>
+        <button onclick="openQuickRecipe(${mi},${ii})" title="Quick recipe" style="background:none;color:var(--turmeric);padding:5px 3px;font-size:11px;flex-shrink:0">Recipe</button>
         <button onclick="addPlanItem(${mi},${ii})" title="Log this" style="background:var(--cardsoft);color:var(--leaf);width:28px;height:28px;padding:0;font-size:16px;flex-shrink:0">＋</button>
       </div>`).join("")}
     </div>`).join("")}
@@ -2948,6 +3368,8 @@ async function getMealPlan(force){
   el.innerHTML = `<div class="card" style="padding:16px;text-align:center"><div style="font-size:13px;color:var(--muted)">✨ Cooking up your plan…</div></div>`;
   try {
     const history = LS.get("mdp_planhistory", []);
+    const planSeed = Math.floor(Math.random()*100000);
+    const planCandidates = buildMealPlanCandidates(profile, history, planSeed);
     // What's already logged today, so the plan covers only the remainder
     let eatenToday = { cal: 0, protein: 0, slots: [] };
     try {
@@ -2968,12 +3390,13 @@ async function getMealPlan(force){
         name: profile.name || "there", diet: profile.diet || "vegetarian",
         cuisines: (profile.cuisines && profile.cuisines.length) ? profile.cuisines : ["Indian"],
         indian_style: profile.indianStyle || "surprise",
+        explore_cuisines: !!profile.exploreCuisines,
         habits: (profile.plan && profile.plan.habits) || [],
         conditions: profile.conditions || [],
         calorie_target: targets.cal, protein_target: targets.protein,
         eaten_calories: eatenToday.cal, eaten_protein: eatenToday.protein, logged_slots: eatenToday.slots,
         allergies: profile.allergies||"", dislikes: profile.dislikes||"",
-        avoid: history.slice(-40), seed: Math.floor(Math.random()*100000)
+        avoid: history.slice(-40), seed: planSeed, candidates: planCandidates
       }})});
     const data = await r.json();
     if (!r.ok || !data.mealplan) throw new Error(data.error || "plan failed");
@@ -2997,6 +3420,56 @@ function addPlanItem(mi, ii){
   const em = estimateMacros(it.name, it.calories, it.protein_g);
   log.push({id:uid(), name:it.name, cal:it.calories, protein:it.protein_g, carbs:em.carbs, fat:em.fat, qty:1, meal:mealName, ts:Date.now()});
   persistLog();
+}
+
+function recipeCacheKey(it){
+  const signature = [profile?.diet||"vegetarian", profile?.allergies||"", profile?.dislikes||"", it.name||""].join("|").toLowerCase();
+  return String(stablePlanRank(signature));
+}
+function renderRecipeSheet(it, recipe){
+  const overlay = document.getElementById("dayModal");
+  const box = document.getElementById("dayModalContent");
+  if (!overlay || !box) return;
+  box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+      <div><div class="card-kicker">Quick recipe</div><h3 style="margin:2px 0 0">${esc(recipe.title||it.name)}</h3></div>
+      <button onclick="document.getElementById('dayModal').classList.add('hide')" aria-label="Close recipe" style="background:none;color:var(--faint);font-size:22px;padding:1px 5px">✕</button>
+    </div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 14px">
+      <span class="recipe-chip">${Math.max(1,Number(recipe.time_minutes)||20)} min</span>
+      <span class="recipe-chip">${esc(recipe.servings||"1 serving")}</span>
+      <span class="recipe-chip">${Math.round(it.calories||0)} cal · ${Math.round(it.protein_g||0)}g protein</span>
+      ${it.cuisine?`<span class="recipe-chip">${esc(it.cuisine)}</span>`:""}
+    </div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--muted);margin-bottom:7px">INGREDIENTS</div>
+    <ul style="margin:0 0 16px;padding-left:20px;display:grid;gap:6px;font-size:13px;line-height:1.4">${(recipe.ingredients||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--muted);margin-bottom:7px">METHOD</div>
+    <ol style="margin:0;padding-left:22px;display:grid;gap:9px;font-size:13px;line-height:1.45">${(recipe.steps||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+    ${recipe.tip?`<div style="margin-top:15px;padding:10px 11px;background:var(--cardsoft);border-radius:10px;font-size:12px;line-height:1.45;color:var(--muted)"><b style="color:var(--text)">Easy option:</b> ${esc(recipe.tip)}</div>`:""}
+    <div style="font-size:10px;color:var(--faint);margin-top:12px;line-height:1.4">Nutrition is an estimate for the displayed portion. Check ingredient labels when managing an allergy.</div>`;
+  overlay.classList.remove("hide");
+}
+async function openQuickRecipe(mi, ii){
+  const c = LS.get("mdp_mealplan_" + dateKey, null);
+  const it = c && c.plan && c.plan[mi] && c.plan[mi].items && c.plan[mi].items[ii];
+  if (!it) return;
+  const key = recipeCacheKey(it);
+  const cache = LS.get("mdp_recipe_cache", {});
+  if (cache[key] && cache[key].recipe){ renderRecipeSheet(it, cache[key].recipe); return; }
+  const overlay = document.getElementById("dayModal"), box = document.getElementById("dayModalContent");
+  if (!overlay || !box) return;
+  box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div class="card-kicker">Quick recipe</div><h3 style="margin:2px 0 0">${esc(it.name)}</h3></div><button onclick="document.getElementById('dayModal').classList.add('hide')" style="background:none;color:var(--faint);font-size:22px">✕</button></div><div style="padding:28px 0;text-align:center;color:var(--muted);font-size:13px">✨ Preparing a simple version…</div>`;
+  overlay.classList.remove("hide");
+  try {
+    const r = await fetch(AI_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"recipe",item:{name:it.name,calories:it.calories,protein_g:it.protein_g,cuisine:it.cuisine||""},profile:{diet:profile?.diet||"vegetarian",cuisines:profile?.cuisines||[],conditions:profile?.conditions||[],allergies:profile?.allergies||"",dislikes:profile?.dislikes||""}})});
+    const data = await r.json();
+    if (!r.ok || !data.recipe) throw new Error(data.error||"recipe failed");
+    cache[key] = {recipe:data.recipe,savedAt:Date.now()};
+    const keep = Object.entries(cache).sort((a,b)=>(b[1].savedAt||0)-(a[1].savedAt||0)).slice(0,40);
+    LS.set("mdp_recipe_cache",Object.fromEntries(keep));
+    renderRecipeSheet(it,data.recipe);
+  } catch(e){
+    box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 style="margin:0">${esc(it.name)}</h3><button onclick="document.getElementById('dayModal').classList.add('hide')" style="background:none;color:var(--faint);font-size:22px">✕</button></div><div style="padding:20px 0;color:var(--chili);font-size:13px">The quick recipe could not be loaded right now. Please try again in a moment.</div><button class="btn-main" onclick="openQuickRecipe(${mi},${ii})">Try again</button>`;
+  }
 }
 
 // ================= Today tab (rendering) =================
@@ -3159,10 +3632,11 @@ async function aiSearchLookup(meal){
     if (!r.ok || !data.items || !data.items.length) throw new Error(data.error || "no items");
     let savedAny = false;
     const shown = data.items.map(i => {
-      const em = estimateMacros(i.name, i.calories, i.protein_g);
-      let f = foods.find(x => x.name === i.name);
+      const normalizedName = normalizeSpecialPortionName(i.name);
+      const em = estimateMacros(normalizedName, i.calories, i.protein_g);
+      let f = foods.find(x => x.name === normalizedName);
       if (!f){
-        f = {id: uid(), name: i.name, cal: i.calories, protein: i.protein_g,
+        f = {id: uid(), name: normalizedName, cal: i.calories, protein: i.protein_g,
              carbs: i.carbs_g != null ? i.carbs_g : em.carbs,
              fat: i.fat_g != null ? i.fat_g : em.fat, meal};
         foods.push(f);
@@ -3294,9 +3768,9 @@ async function aiParse(){
     });
     const data = await r.json();
     if (!r.ok || !data.items) throw new Error(data.error || "parse failed");
-    aiItems = data.items.map(i => ({name:i.name, cal:i.calories, protein:i.protein_g,
-      carbs: i.carbs_g!=null ? i.carbs_g : estimateMacros(i.name, i.calories, i.protein_g).carbs,
-      fat: i.fat_g!=null ? i.fat_g : estimateMacros(i.name, i.calories, i.protein_g).fat,
+    aiItems = data.items.map(i => ({name:normalizeSpecialPortionName(i.name), cal:i.calories, protein:i.protein_g,
+      carbs: i.carbs_g!=null ? i.carbs_g : estimateMacros(normalizeSpecialPortionName(i.name), i.calories, i.protein_g).carbs,
+      fat: i.fat_g!=null ? i.fat_g : estimateMacros(normalizeSpecialPortionName(i.name), i.calories, i.protein_g).fat,
       meal:guessMeal()}));
     status.textContent = aiItems.length ? "Check the numbers, then confirm:" : "Couldn't find any foods in that.";
     renderAiResults();

@@ -1,5 +1,5 @@
 // ThaliFit — AI backend (Cloudflare Worker)
-// Modes: parse (fast tier) · mealplan (smart tier) · plan + checkin (best tier)
+// Modes: parse + quick recipe (fast tier) · mealplan (smart tier) · plan + checkin (best tier)
 // Provider-swappable: flip the PROVIDER constant below. API keys live in Worker
 // secrets (ANTHROPIC_API_KEY / OPENAI_API_KEY / MOONSHOT_API_KEY) — never in client code.
 
@@ -87,6 +87,49 @@ function extractJson(text) {
   const body = t.slice(start, end + 1);
   try { return JSON.parse(body); } catch {}
   return JSON.parse(repairJson(body));   // last resort: escape stray control chars
+}
+
+// Keep the three most commonly ambiguous foods in units people actually use.
+// The prompt below asks the model to calculate nutrition for these units; this
+// final pass keeps the display label consistent if a provider varies its wording.
+function normalizeSpecialPortionName(name) {
+  let out = String(name || "").trim();
+  if (!out) return out;
+
+  const parseAmount = (raw) => {
+    const s = String(raw).trim().replace("¼", "1/4").replace("½", "1/2").replace("¾", "3/4");
+    if (s.includes("/")) {
+      const [a, b] = s.split("/").map(Number);
+      return b ? a / b : 0;
+    }
+    return Number(s) || 0;
+  };
+  const niceAmount = (n) => Number.isInteger(n) ? String(n) : String(Math.round(n * 10) / 10);
+  const cupPattern = /(\d+(?:\.\d+)?|\d+\s*\/\s*\d+|[¼½¾])\s*cups?/i;
+
+  if (/\b(halwa|kesari)\b/i.test(out)) {
+    out = out.replace(/\btablespoons?\b/gi, "tbsp");
+    const cup = out.match(cupPattern);
+    if (cup) out = out.replace(cup[0], niceAmount(parseAmount(cup[1]) * 16) + " tbsp");
+    if (!/\btbsp\b/i.test(out)) out += " (1 tbsp)";
+  }
+
+  if (/\b(ice cream|gelato|sorbet|frozen yog(?:urt|hurt))\b/i.test(out)) {
+    const cup = out.match(cupPattern);
+    if (cup) out = out.replace(cup[0], niceAmount(parseAmount(cup[1]) * 2) + " scoops");
+    out = out.replace(/\b1 scoops\b/gi, "1 scoop");
+    if (!/\bscoops?\b/i.test(out)) out += " (1 scoop)";
+  }
+
+  // Traditional pizza is counted by the slice. Keep the named Taco Bell menu
+  // item intact because it is sold and logged as one complete item.
+  if (/\bpizza\b/i.test(out) && !/taco bell mexican pizza/i.test(out) && !/\bslices?\b/i.test(out)) {
+    const pieces = out.match(/\b(\d+(?:\.\d+)?)\s*(?:pieces?|pcs|wedges?)\b/i);
+    if (pieces) out = out.replace(pieces[0], niceAmount(Number(pieces[1])) + (Number(pieces[1]) === 1 ? " slice" : " slices"));
+    else out += " (1 slice)";
+  }
+
+  return out.replace(/\s+/g, " ").trim();
 }
 
 // Set by each request when the client passes {"debug":true}; collects token usage.
@@ -374,6 +417,18 @@ RULES
     // ============ MODE: DAILY MEAL PLAN (execution only) ============
     if (body.type === "mealplan" && body.profile) {
       const p = body.profile;
+      const planKey = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+      const candidates = (Array.isArray(p.candidates) ? p.candidates : [])
+        .filter((c) => c && typeof c.name === "string")
+        .slice(0, 72)
+        .map((c) => ({
+          name: String(c.name).slice(0, 120),
+          calories: Math.max(0, Math.round(Number(c.calories) || 0)),
+          protein_g: Math.max(0, Math.round(Number(c.protein_g) || 0)),
+          cuisine: String(c.cuisine || "").slice(0, 40),
+          meal_slots: String(c.meal_slots || "").slice(0, 60),
+        }));
+      const candidateMap = new Map(candidates.map((c) => [planKey(c.name), c]));
       const avoid = (Array.isArray(p.avoid) ? p.avoid : []).slice(0, 40).map(String).join("; ");
       // What's already been eaten today — plan only the remainder.
       const eatenCal = Math.max(0, Math.round(Number(p.eaten_calories) || 0));
@@ -383,6 +438,10 @@ RULES
       const remainingPro = Math.max(0, (p.protein_target || 0) - eatenPro);
       const openSlots = ["Morning", "Afternoon", "Evening", "Other"].filter((s) => !usedSlots.includes(s));
       const overBudget = eatenCal > 0 && remainingCal < 150; // essentially no room left
+      const useCandidateLibrary = candidates.length > 0 && !overBudget;
+      const candidateBlock = useCandidateLibrary
+        ? "\nCANDIDATE DISH LIBRARY — choose dish names ONLY from this JSON list and copy each name exactly. Use the listed calories and protein without changing them:\n" + JSON.stringify(candidates)
+        : "";
 
       const alreadyLine = eatenCal > 0
         ? `\nALREADY EATEN TODAY: ${eatenCal} calories, ${eatenPro}g protein${usedSlots.length ? " (logged in: " + usedSlots.join(", ") + ")" : ""}. Plan ONLY these remaining meal slots: ${openSlots.join(", ") || "none"}. The dishes you suggest must add up to about the REMAINING budget below, NOT the full daily target.`
@@ -405,13 +464,17 @@ Their standing habits (respect these when choosing dishes): ${(p.habits || []).j
 Diet: ${dietRules(p.diet)}
 Favourite cuisines: ${(Array.isArray(p.cuisines) && p.cuisines.length ? p.cuisines : ["Indian"]).join(", ")}${(p.cuisines || ["Indian"]).includes("Indian") ? " — Indian leaning: " + (p.indian_style === "north" ? "North Indian" : p.indian_style === "south" ? "South Indian" : "mix North and South") : ""}${conditionText(p.conditions)}${avoidText(p.allergies, p.dislikes)}
 Variety seed: ${p.seed}
+${candidateBlock}
 
 RULES
-- Structure: output ONLY these meal slots: ${(eatenCal > 0 ? openSlots : ["Morning","Afternoon","Evening","Other"]).join(", ") || "Other"} (2-4 items each; "Other" is an optional snack). Do NOT include any slot the user has already logged.
+- Structure: output ONLY these meal slots: ${(eatenCal > 0 ? openSlots : ["Morning","Afternoon","Evening","Other"]).join(", ") || "Other"} (1-3 practical items each; "Other" is an optional snack). Do NOT include any slot the user has already logged.
 - The dishes across the slots you output should TOTAL about ${eatenCal > 0 ? remainingCal : p.calorie_target} calories (within ~10%) and aim for ${eatenCal > 0 ? remainingPro : Math.max(0, (p.protein_target || 0) - 10)}g protein or more.
 - Only include an "Other" snack slot if there is meaningful calorie room left for it.
 - Strictly obey the diet rules and any health considerations above.
-- Real, practical dishes with clear portions, drawn ONLY from the cuisines listed above. If Indian is not listed, do not output Indian dishes at all.
+- ${useCandidateLibrary ? "Every food MUST come from CANDIDATE DISH LIBRARY. Copy its name, calories, and protein exactly; never invent a dish or alter its numbers." : "Use real, practical dishes with clear portions."}
+- When using the candidate library, place each dish only in one of its listed meal_slots.
+- Draw dishes from the user's selected cuisines.${p.explore_cuisines ? " Exploration is enabled: at most ONE meal may come from another cuisine present in the candidate library." : " If Indian is not selected, do not output Indian dishes."}
+- Do not repeat the same candidate twice in one day's plan.
 - Do NOT repeat these recently suggested items: ${avoid || "(none yet)"}.
 - "note" is ONE short sentence naming the theme of today's food only (e.g. "South Indian day, protein spread across all three meals").
 - Respond with ONLY raw JSON, no markdown fences:
@@ -421,21 +484,79 @@ RULES
         const mp = await askClaude(env, MODEL_SMART, 1400, prompt);
         const VALID = ["Morning", "Afternoon", "Evening", "Other"];
         mp.note = String(mp.note || "").slice(0, 200);
+        const usedPlanNames = new Set();
         mp.plan = (mp.plan || [])
           .filter((m) => m && VALID.includes(m.meal) && Array.isArray(m.items) && m.items.length)
           .slice(0, 4)
-          .map((m) => ({
-            meal: m.meal,
-            items: m.items.slice(0, 5).map((i) => ({
-              name: String(i.name || "").slice(0, 120),
-              calories: Math.max(0, Math.round(Number(i.calories) || 0)),
-              protein_g: Math.max(0, Math.round(Number(i.protein_g) || 0)),
-            })),
-          }));
+          .map((m) => {
+            const items = m.items.slice(0, 4).map((i) => {
+              const canonical = candidateMap.get(planKey(i && i.name));
+              if (useCandidateLibrary && !canonical) return null;
+              if (canonical && canonical.meal_slots && !canonical.meal_slots.split("|").includes(m.meal)) return null;
+              const chosenName = canonical ? canonical.name : String((i && i.name) || "").slice(0, 120);
+              const chosenKey = planKey(chosenName);
+              if (!chosenKey || usedPlanNames.has(chosenKey)) return null;
+              usedPlanNames.add(chosenKey);
+              return canonical ? { ...canonical } : {
+                name: chosenName,
+                calories: Math.max(0, Math.round(Number(i && i.calories) || 0)),
+                protein_g: Math.max(0, Math.round(Number(i && i.protein_g) || 0)),
+                cuisine: "",
+              };
+            }).filter(Boolean);
+            return { meal: m.meal, items };
+          })
+          .filter((m) => m.items.length);
         if (!mp.plan.length) throw new Error("empty plan");
         return new Response(JSON.stringify(withMeta({ mealplan: mp }, body.debug)), { headers: cors });
       } catch (e) {
         return new Response(JSON.stringify({ error: "Meal plan failed", detail: String(e).slice(0, 200) }), {
+          status: 500,
+          headers: cors,
+        });
+      }
+    }
+
+    // ============ MODE: QUICK RECIPE (generated only when opened) ============
+    if (body.type === "recipe" && body.item) {
+      const i = body.item || {};
+      const p = body.profile || {};
+      const dish = String(i.name || "").slice(0, 120);
+      if (!dish.trim())
+        return new Response(JSON.stringify({ error: "Missing dish" }), { status: 400, headers: cors });
+      const calories = Math.max(0, Math.round(Number(i.calories) || 0));
+      const protein = Math.max(0, Math.round(Number(i.protein_g) || 0));
+      const cuisine = String(i.cuisine || "").slice(0, 40);
+      const prompt = `You create a quick, realistic home recipe for one item in a nutrition app.
+
+Dish and portion: ${dish}
+Cuisine: ${cuisine || "match the dish"}
+Approximate nutrition target for the displayed portion: ${calories} calories and ${protein}g protein
+Diet: ${dietRules(p.diet)}${conditionText(p.conditions)}${avoidText(p.allergies, p.dislikes)}
+
+RULES
+- The recipe must make ONE serving matching the named portion and stay reasonably close to the nutrition target.
+- Use ordinary US grocery-store ingredients, explicit household measurements, and practical equipment.
+- Keep it genuinely quick: preferably 10-35 minutes, no more than 60 minutes unless the dish inherently needs longer.
+- Give 4-6 short steps. Include cooking oil or other cooking fat in the ingredient list when used.
+- Never include an allergen or disliked ingredient listed above. Do not suggest an allergen as a substitution.
+- Do not provide medical advice, clinical claims, medication guidance, or guarantees.
+- Return ONLY raw JSON:
+{"title":"...","time_minutes":<int>,"servings":"1 serving","ingredients":["amount ingredient",...],"steps":["...",...],"tip":"one optional practical substitution or prep tip"}`;
+      try {
+        const raw = await askClaude(env, MODEL_FAST, 1100, prompt);
+        const recipe = {
+          title: String(raw.title || dish).slice(0, 120),
+          time_minutes: Math.min(180, Math.max(1, Math.round(Number(raw.time_minutes) || 20))),
+          servings: String(raw.servings || "1 serving").slice(0, 40),
+          ingredients: (Array.isArray(raw.ingredients) ? raw.ingredients : []).slice(0, 14).map((x) => String(x).slice(0, 140)),
+          steps: (Array.isArray(raw.steps) ? raw.steps : []).slice(0, 7).map((x) => String(x).slice(0, 220)),
+          tip: String(raw.tip || "").slice(0, 220),
+        };
+        if (recipe.ingredients.length < 2 || recipe.steps.length < 2) throw new Error("incomplete recipe");
+        return new Response(JSON.stringify(withMeta({ recipe }, body.debug)), { headers: cors });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "Recipe failed", detail: String(e).slice(0, 200) }), {
           status: 500,
           headers: cors,
         });
@@ -457,6 +578,10 @@ Rules:
   * One dish with ingredients listed ("omelette with 2 eggs, 2 egg whites and onions") -> return a SINGLE combined item (e.g. "Omelette (2 eggs, 2 whites, onions)") with totals for the whole dish. Do NOT itemize ingredients of a single dish.
 - Include realistic cooking fat (oil/butter/ghee) in any cooked dish's totals — an omelette, curry, or stir-fry is not made dry.
 - Use typical serving sizes; respect quantities the user states.
+- PORTION UNITS — these are hard requirements and the nutrition totals must match the displayed quantity:
+  * Traditional pizza: ALWAYS use slice/slices, never a whole pizza, pie, piece, serving, grams, or ounces. If quantity is missing, assume 1 slice. If the user states a whole pizza, convert it to the estimated total number of slices and keep totals for all those slices. Example: "cheese pizza" -> "Cheese pizza (1 slice)"; "3 slices veggie pizza" -> "Veggie pizza (3 slices)".
+  * Halwa, kesari, and similar soft spoonable Indian sweets: ALWAYS use tbsp. If quantity is missing, assume 1 tbsp. Convert cups to tablespoons (1 cup = 16 tbsp). Example: "gajar halwa" -> "Gajar halwa (1 tbsp)"; "half cup halwa" -> "Halwa (8 tbsp)".
+  * Ice cream, gelato, sorbet, and frozen yogurt: ALWAYS use scoop/scoops. If quantity is missing, assume 1 scoop; 1 scoop is approximately 1/2 cup. Example: "chocolate ice cream" -> "Chocolate ice cream (1 scoop)".
 - For drinks, smoothies, shakes, juices, coffee and tea: express the portion in fluid ounces or cups (e.g. "Mango smoothie (16 oz)"), NEVER in grams.
 - Assume Indian preparation where ambiguous (coffee = filter coffee with milk & sugar, tea = chai).
 - All numbers must be integers for the TOTAL quantity stated (2 dosas = values for 2).
@@ -470,7 +595,7 @@ Rules:
         .filter((i) => i && typeof i.name === "string")
         .slice(0, 15)
         .map((i) => ({
-          name: i.name.slice(0, 120),
+          name: normalizeSpecialPortionName(i.name).slice(0, 120),
           calories: Math.max(0, Math.round(Number(i.calories) || 0)),
           protein_g: Math.max(0, Math.round(Number(i.protein_g) || 0)),
           carbs_g: Math.max(0, Math.round(Number(i.carbs_g) || 0)),
