@@ -1,7 +1,8 @@
 {
-  "name": "ThaliFit",
-  "short_name": "ThaliFit",
+  "name": "Thalify",
+  "short_name": "Thalify",
   "description": "Bold, practical nutrition and activity tracking for the way you actually eat.",
+  "id": "./index.html",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

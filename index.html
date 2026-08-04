@@ -4,14 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#07111F">
-<title>ThaliFit</title>
+<title>Thalify</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Public+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Allura&family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Public+Sans:wght@400;500;600;700&display=swap');
 html{font-size:100%;}   /* text-size control scales this */
-.wordmark{height:30px;width:auto;vertical-align:middle;display:inline-block}
+.brand-wordmark{display:inline-flex;align-items:baseline;white-space:nowrap;line-height:.86;letter-spacing:0}
+.brand-thali{font-family:'Allura','Segoe Script','Brush Script MT',cursive;font-size:42px;font-weight:400;color:var(--text)}
+.brand-fy{font-family:'Public Sans',system-ui,sans-serif;font-size:24px;font-weight:700;color:var(--turmeric);margin-left:1px;letter-spacing:-.055em}
 .periodtabs{display:flex;gap:6px;background:var(--cardsoft);border-radius:12px;padding:4px;margin-bottom:14px}
 .periodtab{flex:1;background:none;border:none;color:var(--muted);font-size:13.5px;font-weight:600;padding:9px 0;border-radius:9px;cursor:pointer;font-family:inherit}
 .periodtab.on{background:var(--turmeric);color:#1a1508}
@@ -44,9 +46,6 @@ html{font-size:100%;}   /* text-size control scales this */
 .duechip .dismiss{background:none;color:var(--faint)}
 .tabdot{position:absolute;top:-3px;right:-6px;width:8px;height:8px;background:var(--turmeric);border-radius:50%;border:1.5px solid var(--card)}
 .tabbar .ico{position:relative}
-.wm-light{display:none}
-body[data-theme="light"] .wm-dark{display:none}
-body[data-theme="light"] .wm-light{display:inline-block}
 :root{
   --bg:#14170F; --card:#1E2318; --cardsoft:#232919; --line:#31392A;
   --turmeric:#E9A03B; --chili:#C96A3B; --leaf:#9BBF6A;
@@ -167,7 +166,7 @@ input:focus,select:focus{outline:1px solid var(--turmeric)}
 .link{background:none;color:var(--turmeric);text-decoration:underline;padding:0;font-size:12px}
 .weightrow{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line)}
 
-/* ================= ThaliFit Bold shell ================= */
+/* ================= Thalify Bold shell ================= */
 :root{
   --bg:#07111F;--card:#101E2E;--cardsoft:#17283A;--line:#294057;
   --turmeric:#FF655D;--chili:#FF655D;--leaf:#B7F36B;--aqua:#57D8C1;--blue:#75A7FF;
@@ -200,7 +199,7 @@ body::before{
   box-shadow:0 14px 45px rgba(0,0,0,.12);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
   position:sticky;top:10px;z-index:45
 }
-.wordmark{height:42px;max-width:180px;object-fit:contain;object-position:left center}
+.brand-wordmark{min-width:126px}
 .h1{display:flex;align-items:center}.sub{font-size:12px;letter-spacing:.01em;margin-top:-4px}
 .hdr>.header-actions{display:flex;gap:8px;align-items:center}
 button,input,select{min-height:42px}
@@ -282,7 +281,7 @@ input,select{min-width:0;background:var(--cardsoft);border-color:var(--line);bor
 .ob-nav{display:flex;gap:10px;margin-top:20px}.ob-nav>*{flex:1}.chip{color:var(--leaf)}
 @media(max-width:760px){
   .wrap{padding:12px 12px 32px}.hdr{top:6px;border-radius:18px;margin-bottom:14px;padding:9px 10px 9px 13px}
-  .wordmark{height:34px;max-width:132px}.hdr .sub{max-width:178px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;margin-top:-2px}.hdr .btn-ghost{padding:7px 9px;font-size:11px}
+  .brand-wordmark{min-width:108px}.brand-thali{font-size:35px}.brand-fy{font-size:20px}.hdr .sub{max-width:178px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;margin-top:-2px}.hdr .btn-ghost{padding:7px 9px;font-size:11px}
   #tab-today,#tab-trends,#profileContent{display:flex;flex-direction:column;gap:14px}#tab-today>*{grid-column:auto;grid-row:auto}#tab-trends>*{grid-column:auto}#profileContent>.profile-card-tap{grid-column:auto}
   .card{border-radius:20px;padding:17px}.daily-score{min-height:0}.daily-score .rings{justify-content:space-around;gap:14px}
   .score-head{align-items:flex-start}.score-head h2{font-size:23px}.score-head p{max-width:142px;font-size:10.5px}
@@ -303,7 +302,7 @@ input,select{min-width:0;background:var(--cardsoft);border-color:var(--line);bor
 <div class="wrap">
   <div class="hdr">
     <div>
-      <div class="h1" id="pageTitle"><img src="logo-wordmark-dark.png" class="wordmark wm-dark" alt="ThaliFit"><img src="logo-wordmark-light.png" class="wordmark wm-light" alt="ThaliFit"><span id="saveChip" class="chip" aria-live="polite"></span></div>
+      <div class="h1" id="pageTitle"><span class="brand-wordmark" role="img" aria-label="Thalify"><span class="brand-thali">Thali</span><span class="brand-fy">fy</span></span><span id="saveChip" class="chip" aria-live="polite"></span></div>
       <div class="sub" id="dateLabel"></div>
     </div>
     <div class="header-actions">
@@ -507,7 +506,7 @@ input,select{min-width:0;background:var(--cardsoft);border-color:var(--line);bor
 // ================= AI endpoint =================
 // Paste your Cloudflare Worker URL between the quotes (must start with https://)
 const AI_ENDPOINT = "https://thalifit-ai.harinathkumar.workers.dev";
-const APP_VERSION = "5.3.2";
+const APP_VERSION = "5.4.0";
 
 const DB = [
 // ============ HIS STAPLES ============
@@ -2337,7 +2336,7 @@ function localPlan(p){
     meat: "Lean poultry, fish, eggs, and occasional red meat make " + protein + "g straightforward; keep fried preparations occasional."
   }[p.diet] || "";
   const rate = p.goal==="lose" ? -0.45 : p.goal==="build" ? 0.2 : 0;
-  const plan = {daily_calories: cal, protein_g: protein, weekly_rate_kg: rate, medical_note: (p.conditions&&p.conditions.length) ? "Your doctor or dietitian sets your medical plan — ThaliFit only helps with food choices." : "",
+  const plan = {daily_calories: cal, protein_g: protein, weekly_rate_kg: rate, medical_note: (p.conditions&&p.conditions.length) ? "Your doctor or dietitian sets your medical plan — Thalify only helps with food choices." : "",
     source: "local",
     summary: "Targets estimated with the standard Mifflin-St Jeor formula based on your stats and activity.",
     habits: [
@@ -2405,7 +2404,7 @@ function renderOnboard(keepVals){
   const fi = ob.heightCm ? cmToFtIn(ob.heightCm) : {ft:"",inch:""};
   document.getElementById("onboardSheet").innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-      <h3 style="margin:0">${profile? "Update your profile" : "Welcome to ThaliFit!"}</h3>
+      <h3 style="margin:0">${profile? "Update your profile" : "Welcome to Thalify!"}</h3>
       ${profile?`<button onclick="closeOnboarding()" title="Close without saving" style="background:none;color:var(--faint);font-size:22px;padding:2px 6px;flex-shrink:0">✕</button>`:""}
     </div>
     <div class="sub">Three short steps to shape your targets and food suggestions. Stored only on this phone.</div>
@@ -2486,7 +2485,7 @@ function renderOnboard(keepVals){
       <div style="display:flex;flex-wrap:wrap;gap:6px">
         ${CONDITIONS.map(c=>`<button type="button" class="cuisine-chip ${(ob.conditions||[]).includes(c.k)?"on":""}" onclick="toggleCondition('${c.k}')">${c.label}</button>`).join("")}
       </div>
-      <div style="font-size:11px;color:var(--faint);margin-top:6px;line-height:1.4">ThaliFit only adjusts food suggestions. It never gives medical advice — your doctor sets that.</div>
+      <div style="font-size:11px;color:var(--faint);margin-top:6px;line-height:1.4">Thalify only adjusts food suggestions. It never gives medical advice — your doctor sets that.</div>
     </div>
     <div class="field"><label>Food allergies (optional) — these are strictly avoided</label>
       <input type="text" id="obAllergies" value="${esc(ob.allergies||"")}" placeholder="e.g. peanuts, shellfish, gluten">
@@ -2735,7 +2734,7 @@ function renderProfile(){
   if (!profile){
     el.innerHTML = `<div class="card" style="text-align:center;padding:28px 16px">
       <div class="serif" style="font-size:19px">Set up your profile</div>
-      <div style="font-size:13px;color:var(--muted);margin:8px 0 16px;line-height:1.5">Tell ThaliFit about yourself and get personalized daily calorie and protein targets${AI_ENDPOINT?" — built by AI":""}.</div>
+      <div style="font-size:13px;color:var(--muted);margin:8px 0 16px;line-height:1.5">Tell Thalify about yourself and get personalized daily calorie and protein targets${AI_ENDPOINT?" — built by AI":""}.</div>
       <button class="btn-main" onclick="openOnboarding()">Get started</button></div>`;
     return;
   }
@@ -3769,7 +3768,7 @@ function exportData(){
   const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "thalifit-backup-" + todayKey() + ".json";
+  a.download = "thalify-backup-" + todayKey() + ".json";
   a.click();
 }
 function importData(ev){
