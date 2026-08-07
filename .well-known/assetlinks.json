@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "io.github.eharinathkumar.thalifit",
-        "sha256_cert_fingerprints": ["5E:9C:01:8B:B8:26:09:D9:E4:96:87:5D:F1:23:BE:8B:ED:5B:BE:CC:0E:2A:4C:F1:00:DE:DC:93:F5:6D:BF:3A"]
+        "sha256_cert_fingerprints": ["2E:0C:FD:69:04:2D:BB:B8:1A:25:5D:9C:3C:A3:35:12:ED:17:F7:F6:65:CC:F3:E6:BB:07:CA:85:07:44:5E:6B"]
       }
     }]
