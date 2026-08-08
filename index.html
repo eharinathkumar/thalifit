@@ -280,8 +280,9 @@ input,select{min-width:0;background:var(--cardsoft);border-color:var(--line);bor
 .ob-step-label{font-size:10px;color:var(--aqua);font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px}.ob-step-title{font:650 21px/1.2 'Fraunces',Georgia,serif;margin-bottom:12px}
 .ob-nav{display:flex;gap:10px;margin-top:20px}.ob-nav>*{flex:1}.chip{color:var(--leaf)}
 @media(max-width:760px){
-  .wrap{padding:12px 12px 32px}.hdr{top:6px;border-radius:18px;margin-bottom:14px;padding:9px 10px 9px 13px}
-  .brand-wordmark{min-width:108px}.brand-thali{font-size:35px}.brand-fy{font-size:20px}.hdr .sub{max-width:178px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;margin-top:-2px}.hdr .btn-ghost{padding:7px 9px;font-size:11px}
+  .wrap{padding:12px 12px 32px}.hdr{top:6px;border-radius:18px;margin-bottom:14px;padding:9px 10px 9px 13px;align-items:center}
+  .hdr>div:first-child{flex:1;min-width:0;padding-right:10px}.hdr>.header-actions{flex-shrink:0}
+  .brand-wordmark{min-width:108px}.brand-thali{font-size:35px}.brand-fy{font-size:20px}.hdr .sub{max-width:none;white-space:normal;overflow:visible;text-overflow:clip;font-size:11px;line-height:1.35;margin-top:1px}.hdr .btn-ghost{padding:7px 9px;font-size:11px}
   #tab-today,#tab-trends,#profileContent{display:flex;flex-direction:column;gap:14px}#tab-today>*{grid-column:auto;grid-row:auto}#tab-trends>*{grid-column:auto}#profileContent>.profile-card-tap{grid-column:auto}
   .card{border-radius:20px;padding:17px}.daily-score{min-height:0}.daily-score .rings{justify-content:space-around;gap:14px}
   .score-head{align-items:flex-start}.score-head h2{font-size:23px}.score-head p{max-width:142px;font-size:10.5px}
@@ -292,7 +293,7 @@ input,select{min-width:0;background:var(--cardsoft);border-color:var(--line);bor
   .bodymap-figure{min-height:282px;padding:12px 2px}.bodymap-figure svg{width:116px!important}.badgegrid{grid-template-columns:repeat(5,minmax(50px,1fr));overflow-x:auto;padding-bottom:4px}
 }
 @media(max-width:390px){
-  .hdr .sub{max-width:145px}.score-head{display:block}.score-head p{text-align:left;max-width:none;margin-top:6px}.daily-score .ring svg{width:88px;height:88px}
+  .hdr .sub{max-width:none}.score-head{display:block}.score-head p{text-align:left;max-width:none;margin-top:6px}.daily-score .ring svg{width:88px;height:88px}
   .meal-title .dot9{display:none}.quicklog-grid{grid-template-columns:1fr}.quick-action{min-height:82px}.bodymap-figure{min-height:252px}.bodymap-figure svg{width:103px!important}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
@@ -413,9 +414,9 @@ input,select{min-width:0;background:var(--cardsoft);border-color:var(--line);bor
 
 <!-- Bottom tab bar -->
 <div class="tabbar">
-  <button id="tabbtn-today" class="active" onclick="showTab('today')" aria-label="Today"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10.5V20h11v-9.5"/><path d="M10 20v-6h4v6"/></svg></span>Today</button>
+  <button id="tabbtn-today" class="active" onclick="showTab('today')" aria-label="Today"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10.5V20h11v-9.5"/><path d="M10 20v-6h4v6"/></svg><span id="todayCheckinDot" class="tabdot hide"></span></span>Today</button>
   <button id="tabbtn-trends" onclick="showTab('trends')" aria-label="Trends"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9"/><path d="M12 19V5"/><path d="M19 19v-7"/></svg><span id="trendsDot" class="tabdot hide"></span></span>Trends</button>
-  <button id="tabbtn-profile" onclick="showTab('profile')" aria-label="Profile"><span class="ico" id="profileTabIco"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg></span>Profile</button>
+  <button id="tabbtn-profile" onclick="showTab('profile')" aria-label="Profile"><span class="ico" id="profileTabIco"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg><span id="profileCheckinDot" class="tabdot hide"></span></span>Profile</button>
 </div>
 <button class="quick-fab" onclick="openQuickLog()" aria-label="Open quick log">+</button>
 <div id="quickLog" class="overlay hide" role="dialog" aria-modal="true" aria-label="Quick log" onclick="if(event.target===this)closeQuickLog()">
@@ -506,7 +507,7 @@ input,select{min-width:0;background:var(--cardsoft);border-color:var(--line);bor
 // ================= AI endpoint =================
 // Paste your Cloudflare Worker URL between the quotes (must start with https://)
 const AI_ENDPOINT = "https://thalifit-ai.harinathkumar.workers.dev";
-const APP_VERSION = "5.4.0";
+const APP_VERSION = "5.5.3";
 
 const DB = [
 // ============ HIS STAPLES ============
@@ -1277,6 +1278,11 @@ const PLAN_DISHES = [
 ["Beet white bean dip with rye crisps",210,9,"Eastern European","vegan","Other","gluten"],
 ];
 
+// Unit labels are part of the food-data contract. Normalize built-in rows before
+// they are indexed or sent to the meal planner so every downstream path agrees.
+DB.forEach(row => { row[0] = normalizeSpecialPortionName(row[0]); });
+PLAN_DISHES.forEach(row => { row[0] = normalizeSpecialPortionName(row[0]); });
+
 const dbNameSet = new Set(DB.map(([name]) => name.toLowerCase()));
 PLAN_DISHES.forEach(([name, calories, protein]) => {
   if (!dbNameSet.has(name.toLowerCase())) {
@@ -1310,6 +1316,7 @@ const DEFAULT_FOODS = [
   {id:"f20", name:"Dal (1 cup)", cal:200, protein:12, meal:"Evening"},
   {id:"f21", name:"Creatine 5g", cal:0, protein:0, meal:"Other"},
 ];
+DEFAULT_FOODS.forEach(food => { food.name = normalizeSpecialPortionName(food.name); });
 
 const MEALS = ["Morning","Afternoon","Evening","Other"];
 const MACRO_COLORS = {p:"#75A7FF", c:"#FF655D", f:"#B7F36B"};
@@ -1396,18 +1403,165 @@ function normalizeSpecialPortionName(name){
     if (cup) out = out.replace(cup[0], nice(parseAmount(cup[1])*16)+" tbsp");
     if (!/\btbsp\b/i.test(out)) out += " (1 tbsp)";
   }
-  if (/\b(ice cream|gelato|sorbet|frozen yog(?:urt|hurt))\b/i.test(out)){
+  const frozenNovelty = /\b(?:ice[ -]?cream|gelato|sorbet|frozen yog(?:urt|hurt))\s+(?:sandwich(?:es)?|bars?|pops?|cones?)\b/i.test(out);
+  if (!frozenNovelty && /\b(ice cream|gelato|sorbet|frozen yog(?:urt|hurt))\b/i.test(out)){
     const cup = out.match(cupPattern);
     if (cup) out = out.replace(cup[0], nice(parseAmount(cup[1])*2)+" scoops");
     out = out.replace(/\b1 scoops\b/gi,"1 scoop");
     if (!/\bscoops?\b/i.test(out)) out += " (1 scoop)";
   }
-  if (/\bpizza\b/i.test(out) && !/taco bell mexican pizza/i.test(out) && !/\bslices?\b/i.test(out)){
+  const pizzaNovelty = /\bpizza\s+(?:rolls?|bites?|bagels?|pockets?)\b/i.test(out);
+  if (/\bpizza\b/i.test(out) && !pizzaNovelty && !/taco bell mexican pizza/i.test(out) && !/\bslices?\b/i.test(out)){
     const pieces = out.match(/\b(\d+(?:\.\d+)?)\s*(?:pieces?|pcs|wedges?)\b/i);
     if (pieces) out = out.replace(pieces[0], nice(Number(pieces[1]))+(Number(pieces[1])===1?" slice":" slices"));
     else out += " (1 slice)";
   }
+
+  // Smoothies are volume-based. Preserve the nutrition record and normalize
+  // only its displayed quantity. The established catalog default is 16 oz.
+  // A smoothie bowl remains a bowl; it is food, not a drink.
+  if (/\bsmoothie\b/i.test(out) && !/\bsmoothie\s+(?:bowl|mix|powder)\b/i.test(out)){
+    const cupAtEnd = out.match(/(\d+(?:\.\d+)?|\d+\s*\/\s*\d+|[¼½¾])\s*cups?\s*(?=\)|$)/i);
+    const mlAtEnd = out.match(/(\d+(?:\.\d+)?)\s*(?:ml|millilit(?:er|re)s?)\s*(?=\)|$)/i);
+    const litreAtEnd = out.match(/(\d+(?:\.\d+)?)\s*(?:l|lit(?:er|re)s?)\s*(?=\)|$)/i);
+    if (cupAtEnd) out = out.replace(cupAtEnd[0], nice(parseAmount(cupAtEnd[1])*8)+" oz");
+    else if (mlAtEnd) out = out.replace(mlAtEnd[0], nice(Number(mlAtEnd[1])*0.033814)+" oz");
+    else if (litreAtEnd) out = out.replace(litreAtEnd[0], nice(Number(litreAtEnd[1])*33.814)+" oz");
+    out = out.replace(/\bfluid\s+ounces?\b/gi,"oz").replace(/\bfl\.?\s*oz\.?\b/gi,"oz").replace(/\bounces?\b/gi,"oz");
+    if (!/\b\d+(?:\.\d+)?\s*oz\b/i.test(out)) out += out.includes("(") ? " · 16 oz" : " (16 oz)";
+  }
+
+  // Brown rice is exact: the database contains 1 cup cooked at 215 cal / 5g,
+  // so its 430 / 10 row is exactly two cups. The other entries below are
+  // PM-approved legacy catalog assumptions. They change labels only; stored
+  // nutrition is intentionally invariant. Composite "with rice" meals are
+  // excluded because their whole-dish bowl/plate unit remains authoritative.
+  const riceNames = {
+    "Brown rice (2 servings)":"Brown rice (2 cups cooked)",
+    "Chipotle White Rice":"Chipotle White Rice (0.75 cup)",
+    "Chipotle Brown Rice":"Chipotle Brown Rice (0.75 cup)",
+    "Veg biryani (1 plate)":"Veg biryani (1.5 cups)",
+    "Hyderabadi veg biryani (1 plate)":"Hyderabadi veg biryani (1.5 cups)",
+    "Egg biryani (1 plate)":"Egg biryani (1.5 cups)",
+    "Chicken biryani (1 plate)":"Chicken biryani (2 cups)",
+    "Mutton biryani (1 plate)":"Mutton biryani (2 cups)",
+    "Chicken 65 biryani (1 plate)":"Chicken 65 biryani (2 cups)",
+    "Thai fried rice, chicken (1 plate)":"Thai fried rice, chicken (2.5 cups)",
+    "Thai basil fried rice (1 plate)":"Thai basil fried rice (2.5 cups)",
+    "Pineapple fried rice (1 plate)":"Pineapple fried rice (2.5 cups)",
+    "Kimchi fried rice (1 plate)":"Kimchi fried rice (2 cups)",
+    "Panda Express Fried Rice (serving)":"Panda Express Fried Rice (1.5 cups)",
+    "Mango sticky rice":"Mango sticky rice (1 cup)",
+    "Mango sticky rice, light portion":"Mango sticky rice, light portion (0.5 cup)",
+    "Korean vegetable rice porridge":"Korean vegetable rice porridge (1.5 cups)",
+    "Filipino coconut rice porridge":"Filipino coconut rice porridge (1.5 cups)",
+    "Kimchi fried rice with egg":"Kimchi fried rice with egg (1.5 cups)",
+    "Garlic rice with egg and tomatoes":"Garlic rice with egg and tomatoes (1.5 cups)"
+  };
+  if (riceNames[out]) out = riceNames[out];
   return out.replace(/\s+/g," ").trim();
+}
+
+function foodUnitInfo(name){
+  const normalized = normalizeSpecialPortionName(name);
+  let match;
+  if (/\bsmoothie\b/i.test(normalized) && (match = normalized.match(/(\d+(?:\.\d+)?)\s*oz\b/i)))
+    return {unit:"oz", amount:Number(match[1])};
+  if (/\brice\b/i.test(normalized) && (match = normalized.match(/(\d+(?:\.\d+)?)\s*cups?\b/i)))
+    return {unit:"cup", amount:Number(match[1])};
+  return null;
+}
+
+function formatFoodAmount(name, qty){
+  const info = foodUnitInfo(name), q = Number(qty)||1;
+  if (!info) return q+" serving"+(q===1?"":"s");
+  const amount = Math.round(info.amount*q*100)/100;
+  return amount+" "+info.unit+(info.unit==="cup" && amount!==1?"s":"");
+}
+
+const DATA_SCHEMA_VERSION = 3;
+function migrateFoodUnitsInStorage(force=false){
+  const previous = Number(LS.get("mdp_schema_version",1)) || 1;
+  if (!force && previous >= DATA_SCHEMA_VERSION) return false;
+  let changed = false;
+  const normalizeObjectName = value => {
+    if (!value || typeof value !== "object" || typeof value.name !== "string") return value;
+    const name = normalizeSpecialPortionName(value.name);
+    if (name === value.name) return value;
+    changed = true;
+    return {...value,name};
+  };
+  const keys = [];
+  for (let i=0;i<localStorage.length;i++) keys.push(localStorage.key(i));
+  keys.forEach(key => {
+    if (key === "mdp_foods" || key.startsWith("mdp_log_")){
+      const rows = LS.get(key,[]);
+      if (Array.isArray(rows)){
+        const next = rows.map(normalizeObjectName);
+        if (next.some((row,i)=>row!==rows[i])) LS.set(key,next);
+      }
+    } else if (key.startsWith("mdp_mealplan_")){
+      const plan = LS.get(key,null);
+      if (plan && Array.isArray(plan.plan)){
+        const next = {...plan,plan:plan.plan.map(meal=>({...meal,items:Array.isArray(meal.items)?meal.items.map(normalizeObjectName):[]}))};
+        if (JSON.stringify(next)!==JSON.stringify(plan)){ changed=true; LS.set(key,next); }
+      }
+    } else if (key === "mdp_planhistory"){
+      const history = LS.get(key,[]);
+      if (Array.isArray(history)){
+        const next = history.map(item=>typeof item==="string"?normalizeSpecialPortionName(item):item);
+        if (JSON.stringify(next)!==JSON.stringify(history)){ changed=true; LS.set(key,next); }
+      }
+    } else if (key === "mdp_recipe_cache"){
+      const cache = LS.get(key,{});
+      let cacheChanged = false;
+      const next = Object.fromEntries(Object.entries(cache||{}).map(([cacheKey,entry])=>{
+        if (!entry || !entry.recipe || typeof entry.recipe.title!=="string") return [cacheKey,entry];
+        const title = normalizeSpecialPortionName(entry.recipe.title);
+        if (title===entry.recipe.title) return [cacheKey,entry];
+        cacheChanged = changed = true;
+        const info = foodUnitInfo(title);
+        return [cacheKey,{...entry,recipe:{...entry.recipe,title, ...(info?{servings:formatFoodAmount(title,1)}:{})}}];
+      }));
+      if (cacheChanged) LS.set(key,next);
+    }
+  });
+  LS.set("mdp_schema_version",DATA_SCHEMA_VERSION);
+  return changed;
+}
+migrateFoodUnitsInStorage();
+
+// Weekly check-ins have their own persisted cadence. Older builds derived the
+// schedule at render time and fell back to Date.now(), which could keep legacy
+// profiles at day zero forever. Store the next date once and never move it when
+// the user edits or regenerates the rest of the plan.
+const CHECKIN_INTERVAL_MS = 7 * 86400000;
+function validCheckinTime(value){
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+function ensureCheckinSchedule(targetProfile, persist=true){
+  if (!targetProfile || !targetProfile.plan || !targetProfile.plan.daily_calories) return false;
+  const plan = targetProfile.plan;
+  const now = Date.now();
+  const legacyAnchor = validCheckinTime(plan.lastCheckin) || validCheckinTime(plan.created) || validCheckinTime(targetProfile.created);
+  let changed = false;
+  if (!validCheckinTime(plan.created)){
+    plan.created = validCheckinTime(targetProfile.created) || now;
+    changed = true;
+  }
+  if (!validCheckinTime(plan.nextCheckinAt)){
+    // Profiles with no trustworthy legacy date should get a check-in now,
+    // instead of silently starting a new seven-day wait on every render.
+    plan.nextCheckinAt = legacyAnchor ? legacyAnchor + CHECKIN_INTERVAL_MS : now;
+    changed = true;
+  }
+  if (!Array.isArray(targetProfile.checkinHistory)){
+    targetProfile.checkinHistory = targetProfile.lastCheckinResult ? [targetProfile.lastCheckinResult] : [];
+    changed = true;
+  }
+  if (changed && persist) LS.set("mdp_profile", targetProfile);
+  return changed;
 }
 
 // ================= Barcode scanner (Android Chrome BarcodeDetector) =================
@@ -1472,7 +1626,7 @@ async function barcodeLookup(code){
     const brand = (prod.brands || "").split(",")[0].trim();
     const base = (brand ? brand + " " : "") + (prod.product_name || "Scanned item");
     const portion = perServing ? (prod.serving_size ? "1 serving, " + prod.serving_size : "1 serving") : "per 100 g";
-    const name = (base + " (" + portion + ")").slice(0, 100);
+    const name = normalizeSpecialPortionName((base + " (" + portion + ")").slice(0, 100));
     closeScanner();
     // Save to personal library (skip dup) and log it
     let f = foods.find(x => x.name === name);
@@ -1520,7 +1674,7 @@ let dateKey = todayKey();
 let anchorToday = todayKey();
 function loadDayLog(){
   log = LS.get("mdp_log_" + dateKey, []);
-  log = log.map(e => ({...e, qty: e.qty || 1, ...(e.carbs != null ? {} : estimateMacros(e.name, e.cal, e.protein))}));
+  log = log.map(e => ({...e, name:normalizeSpecialPortionName(e.name), qty: e.qty || 1, ...(e.carbs != null ? {} : estimateMacros(e.name, e.cal, e.protein))}));
 }
 function renderDayNav(){
   const el = document.getElementById("dayNav");
@@ -1572,10 +1726,11 @@ else {
 }
 let log = LS.get("mdp_log_" + dateKey, []);
 // Migrate older entries: add serving qty and macro estimates
-log = log.map(e => ({...e, qty: e.qty || 1, ...(e.carbs != null ? {} : estimateMacros(e.name, e.cal, e.protein))}));
+log = log.map(e => ({...e, name:normalizeSpecialPortionName(e.name), qty: e.qty || 1, ...(e.carbs != null ? {} : estimateMacros(e.name, e.cal, e.protein))}));
 let targets = LS.get("mdp_targets", {cal:2200, protein:132});
 let profile = LS.get("mdp_profile", null);
 if (profile && profile.diet === "nonveg") { profile.diet = "meat"; LS.set("mdp_profile", profile); }
+ensureCheckinSchedule(profile);
 let weights = LS.get("mdp_weights", []);
 // One-time migration: an older build could store an imperial POUNDS value in the kg field.
 // The tell: BMI computed from the stored kg + height is wildly out of human range.
@@ -1629,6 +1784,16 @@ function updateProfileTabIcon(){
   } else {
     ico.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg>`;
   }
+  ico.insertAdjacentHTML("beforeend", `<span id="profileCheckinDot" class="tabdot hide"></span>`);
+  updateCheckinIndicators();
+}
+function updateCheckinIndicators(){
+  const due = checkinInfo().due;
+  ["todayCheckinDot","profileCheckinDot"].forEach(id => document.getElementById(id)?.classList.toggle("hide", !due));
+  const todayBtn = document.getElementById("tabbtn-today");
+  const profileBtn = document.getElementById("tabbtn-profile");
+  if (todayBtn) todayBtn.setAttribute("aria-label", due ? "Today — weekly check-in ready" : "Today");
+  if (profileBtn) profileBtn.setAttribute("aria-label", due ? "Profile — weekly check-in ready" : "Profile");
 }
 function avatarDisc(idx, size){
   const a = AVATARS[idx] || AVATARS[0];
@@ -2286,6 +2451,7 @@ function showTab(name){
   if (name==="trends") renderTrends();
   renderDueNudge();
   if (name==="profile") renderProfile();
+  else updateCheckinIndicators();
 }
 
 function openQuickLog(){
@@ -2534,6 +2700,7 @@ async function finishOnboarding(){
   const goBtn = document.getElementById("obGo");
   if (goBtn){ goBtn.disabled = true; goBtn.style.opacity = "0.5"; goBtn.textContent = AI_ENDPOINT ? "✨ Building your plan…" : "Calculating…"; }
   st.textContent = AI_ENDPOINT ? "Asking AI to build your plan…" : "Calculating…";
+  const previousPlan = profile && profile.plan ? {...profile.plan} : null;
   const p = {units:ob.units, name:ob.name||"", diet:ob.diet||"vegetarian", cuisines:(ob.cuisines&&ob.cuisines.length)?ob.cuisines:["Indian"], indianStyle:ob.indianStyle||"surprise", exploreCuisines:!!ob.exploreCuisines,
     goalWeightKg: ob.goalWeightKg ? Math.round(ob.goalWeightKg*10)/10 : null, conditions: ob.conditions||[],
     allergies: ob.allergies||"", dislikes: ob.dislikes||"",
@@ -2552,9 +2719,12 @@ async function finishOnboarding(){
     } catch(e){ /* fall through to local */ }
   }
   if (!plan){ plan = localPlan(p); if (AI_ENDPOINT) plan.summary += " (AI was unreachable, so this used the standard formula — you can re-run from your profile.)"; }
-  plan.created = Date.now();
-  plan.lastCheckin = Date.now();
-  plan.startWeightKg = p.weightKg;
+  const planBuiltAt = Date.now();
+  plan.created = validCheckinTime(previousPlan && previousPlan.created) || planBuiltAt;
+  if (validCheckinTime(previousPlan && previousPlan.lastCheckin)) plan.lastCheckin = previousPlan.lastCheckin;
+  if (validCheckinTime(previousPlan && previousPlan.nextCheckinAt)) plan.nextCheckinAt = previousPlan.nextCheckinAt;
+  if (!plan.coach_notes && previousPlan && previousPlan.coach_notes) plan.coach_notes = previousPlan.coach_notes;
+  plan.startWeightKg = previousPlan && previousPlan.startWeightKg != null ? previousPlan.startWeightKg : p.weightKg;
   // Treat the entered weight as today's weigh-in so the journey and log agree
   {
     const wk = todayKey();
@@ -2564,6 +2734,9 @@ async function finishOnboarding(){
     LS.set("mdp_weights", weights);
   }
   p.plan = plan;
+  if (profile && Array.isArray(profile.checkinHistory)) p.checkinHistory = profile.checkinHistory;
+  if (profile && profile.lastCheckinResult) p.lastCheckinResult = profile.lastCheckinResult;
+  ensureCheckinSchedule(p, false);
   profile = p;
   LS.set("mdp_profile", profile);
   targets = {cal: plan.daily_calories, protein: plan.protein_g};
@@ -2692,17 +2865,34 @@ function openBadgesDetail(){
 
 function checkinInfo(){
   const plan = (profile && profile.plan) || {};
-  const lastCheck = plan.lastCheckin || plan.created || Date.now();
-  const daysSince = Math.max(0, Math.floor((Date.now()-lastCheck)/86400000));
-  return { due: !!(AI_ENDPOINT && plan.daily_calories && daysSince>=7), daysSince };
+  const eligible = !!(AI_ENDPOINT && plan.daily_calories);
+  if (eligible) ensureCheckinSchedule(profile);
+  const now = Date.now();
+  const nextAt = validCheckinTime(plan.nextCheckinAt);
+  const lastCheck = validCheckinTime(plan.lastCheckin) || validCheckinTime(plan.created) || (nextAt ? nextAt-CHECKIN_INTERVAL_MS : now);
+  const due = !!(eligible && nextAt && now >= nextAt);
+  const daysSince = Math.max(0, Math.floor((now-lastCheck)/86400000));
+  const daysUntil = nextAt ? Math.max(0, Math.ceil((nextAt-now)/86400000)) : null;
+  return { eligible, due, nextAt, daysSince, daysUntil };
 }
 function checkinCardHtml(){
   const ci = checkinInfo();
-  if (!ci.due) return "";
-  return `<div class="card" style="border:1px solid var(--turmeric)">
+  if (!ci.eligible) return `<div class="card">
+    <div class="serif" style="font-size:17px">📋 Weekly check-in</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5">Build your personalized plan to unlock a weekly coaching check-in.</div>
+  </div>`;
+  if (ci.due) return `<div class="card" style="border:1px solid var(--turmeric)">
     <div class="serif" style="font-size:17px">📋 Weekly check-in ready</div>
-    <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5">It's been ${ci.daysSince} days. Let's look at how the week went and adjust if needed.</div>
-    <button class="btn-main" style="width:100%;margin-top:12px" onclick="runCheckin()">Run my check-in</button>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5">Your week is ready to review. We'll use your food logs, workouts, walking and weigh-ins to tailor the next step.</div>
+    <button class="btn-main" data-checkin-action style="width:100%;margin-top:12px" onclick="runCheckin()">Run my check-in</button>
+  </div>`;
+  const nextLabel = new Date(ci.nextAt).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+  return `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <div class="serif" style="font-size:17px">📋 Weekly check-in</div>
+      <span style="font-size:10px;color:var(--leaf);font-weight:700;letter-spacing:.06em;text-transform:uppercase">Scheduled</span>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5">Next check-in ${ci.daysUntil===1?"tomorrow":"in "+ci.daysUntil+" days"} · ${nextLabel}</div>
   </div>`;
 }
 function planCardHtml(opts){
@@ -2813,9 +3003,6 @@ function renderProfileFull(){
   }
 
   // Weekly check-in availability
-  const lastCheck = plan.lastCheckin || plan.created || Date.now();
-  const daysSince = Math.max(0, Math.floor((Date.now()-lastCheck)/86400000));
-  const checkinDue = AI_ENDPOINT && plan.daily_calories && daysSince >= 7;
   const lastResult = profile.lastCheckinResult;
 
   el.innerHTML = `
@@ -2838,11 +3025,7 @@ function renderProfileFull(){
 
     ${journeyHtml}
 
-    ${checkinDue ? `<div class="card" style="border:1px solid var(--turmeric)">
-      <div class="serif" style="font-size:17px">📋 Weekly check-in ready</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5">It's been ${daysSince} days. Let's look at how the week went and adjust if needed.</div>
-      <button class="btn-main" style="width:100%;margin-top:12px" onclick="runCheckin()">Run my check-in</button>
-    </div>` : ""}
+    ${checkinCardHtml()}
 
     ${lastResult ? `<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -2867,7 +3050,6 @@ function renderProfileFull(){
 }
 
 async function runCheckin(){
-  const el = document.getElementById("profileContent");
   const plan = profile.plan || {};
   const latest = weights.length ? weights[weights.length-1] : null;
   const first = weights.length ? weights[0] : null;
@@ -2890,8 +3072,8 @@ async function runCheckin(){
   }
   const weeksElapsed = plan.created ? Math.max(1, Math.round((Date.now()-plan.created)/604800000)) : 1;
 
-  const btnHost = el.querySelector(".btn-main");
-  if (btnHost){ btnHost.disabled = true; btnHost.style.opacity = ".5"; btnHost.textContent = "Looking at your week…"; }
+  const actionButtons = [...document.querySelectorAll("[data-checkin-action]")];
+  actionButtons.forEach(btn => { btn.disabled = true; btn.style.opacity = ".5"; btn.textContent = "Looking at your week…"; });
 
   try {
     const r = await fetch(AI_ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json"},
@@ -2917,14 +3099,19 @@ async function runCheckin(){
       profile.plan.daily_calories = targets.cal;
       profile.plan.protein_g = targets.protein;
     }
-    profile.plan.lastCheckin = Date.now();
+    const completedAt = Date.now();
+    profile.plan.lastCheckin = completedAt;
+    profile.plan.nextCheckinAt = completedAt + CHECKIN_INTERVAL_MS;
     if (c.updated_coach_notes) profile.plan.coach_notes = c.updated_coach_notes;
-    profile.lastCheckinResult = {message:c.message, focus_habit:c.focus_habit, status:c.status, at:Date.now()};
+    profile.lastCheckinResult = {message:c.message, focus_habit:c.focus_habit, status:c.status,
+      adjusted_calories:c.adjusted_calories||null, adjusted_protein:c.adjusted_protein||null, at:completedAt};
+    profile.checkinHistory = [...(Array.isArray(profile.checkinHistory)?profile.checkinHistory:[]), profile.lastCheckinResult].slice(-52);
     LS.set("mdp_profile", profile);
     renderProfile();
+    if (!document.getElementById("profileFull").classList.contains("hide")) renderProfileFull();
     renderTotals();
   } catch(e){
-    if (btnHost){ btnHost.disabled = false; btnHost.style.opacity = "1"; btnHost.textContent = "Run my check-in"; }
+    actionButtons.forEach(btn => { btn.disabled = false; btn.style.opacity = "1"; btn.textContent = "Run my check-in"; });
     alert("Couldn't reach the coach right now — try again in a bit.");
   }
 }
@@ -3343,7 +3530,7 @@ function buildMealPlanCandidates(p, history, seed){
       chosen = [...chosen, ...safe.filter(d=>d[3]===exploreCuisine).sort((a,b)=>rank(a)-rank(b)).slice(0,7)];
     }
   }
-  return chosen.slice(0,72).map(d=>({name:d[0],calories:d[1],protein_g:d[2],cuisine:d[3],meal_slots:d[5]}));
+  return chosen.slice(0,72).map(d=>({name:normalizeSpecialPortionName(d[0]),calories:d[1],protein_g:d[2],cuisine:d[3],meal_slots:d[5]}));
 }
 let planCollapsed = LS.get("mdp_plan_collapsed", false);
 function togglePlanCard(){
@@ -3388,7 +3575,7 @@ function renderPlanCard(){
     ${(cached.plan||[]).map((m,mi)=>`<div style="margin-top:12px">
       <div style="font-size:12px;font-weight:600;letter-spacing:.04em;color:${MEAL_COLORS[m.meal]||"var(--muted)"}">${esc(m.meal).toUpperCase()}</div>
       ${(m.items||[]).map((it,ii)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px">
-        <span style="flex:1;line-height:1.35">${esc(it.name)}</span>
+        <span style="flex:1;line-height:1.35">${esc(normalizeSpecialPortionName(it.name))}</span>
         <span style="color:var(--muted);font-size:11px;white-space:nowrap">${it.calories} · ${it.protein_g}g</span>
         <button onclick="openQuickRecipe(${mi},${ii})" title="Quick recipe" style="background:none;color:var(--turmeric);padding:5px 3px;font-size:11px;flex-shrink:0">Recipe</button>
         <button onclick="addPlanItem(${mi},${ii})" title="Log this" style="background:var(--cardsoft);color:var(--leaf);width:28px;height:28px;padding:0;font-size:16px;flex-shrink:0">＋</button>
@@ -3443,6 +3630,9 @@ async function getMealPlan(force){
       }})});
     const data = await r.json();
     if (!r.ok || !data.mealplan) throw new Error(data.error || "plan failed");
+    (data.mealplan.plan||[]).forEach(meal=>(meal.items||[]).forEach(item=>{
+      item.name = normalizeSpecialPortionName(item.name);
+    }));
     // record what the plan was based on, then persist
     data.mealplan._basedOn = eatenToday.cal > 0 ? {eaten: eatenToday.cal, slots: eatenToday.slots} : null;
     LS.set("mdp_mealplan_" + dateKey, data.mealplan);
@@ -3460,13 +3650,14 @@ function addPlanItem(mi, ii){
   if (!c || !c.plan[mi] || !c.plan[mi].items[ii]) return;
   const m = c.plan[mi], it = m.items[ii];
   const mealName = MEALS.includes(m.meal) ? m.meal : guessMeal();
-  const em = estimateMacros(it.name, it.calories, it.protein_g);
-  log.push({id:uid(), name:it.name, cal:it.calories, protein:it.protein_g, carbs:em.carbs, fat:em.fat, qty:1, meal:mealName, ts:Date.now()});
+  const itemName = normalizeSpecialPortionName(it.name);
+  const em = estimateMacros(itemName, it.calories, it.protein_g);
+  log.push({id:uid(), name:itemName, cal:it.calories, protein:it.protein_g, carbs:em.carbs, fat:em.fat, qty:1, meal:mealName, ts:Date.now()});
   persistLog();
 }
 
 function recipeCacheKey(it){
-  const signature = [profile?.diet||"vegetarian", profile?.allergies||"", profile?.dislikes||"", it.name||""].join("|").toLowerCase();
+  const signature = [profile?.diet||"vegetarian", profile?.allergies||"", profile?.dislikes||"", normalizeSpecialPortionName(it.name||"")].join("|").toLowerCase();
   return String(stablePlanRank(signature));
 }
 function renderRecipeSheet(it, recipe){
@@ -3474,7 +3665,7 @@ function renderRecipeSheet(it, recipe){
   const box = document.getElementById("dayModalContent");
   if (!overlay || !box) return;
   box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
-      <div><div class="card-kicker">Quick recipe</div><h3 style="margin:2px 0 0">${esc(recipe.title||it.name)}</h3></div>
+      <div><div class="card-kicker">Quick recipe</div><h3 style="margin:2px 0 0">${esc(normalizeSpecialPortionName(recipe.title||it.name))}</h3></div>
       <button onclick="document.getElementById('dayModal').classList.add('hide')" aria-label="Close recipe" style="background:none;color:var(--faint);font-size:22px;padding:1px 5px">✕</button>
     </div>
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 14px">
@@ -3493,8 +3684,9 @@ function renderRecipeSheet(it, recipe){
 }
 async function openQuickRecipe(mi, ii){
   const c = LS.get("mdp_mealplan_" + dateKey, null);
-  const it = c && c.plan && c.plan[mi] && c.plan[mi].items && c.plan[mi].items[ii];
-  if (!it) return;
+  const sourceItem = c && c.plan && c.plan[mi] && c.plan[mi].items && c.plan[mi].items[ii];
+  if (!sourceItem) return;
+  const it = {...sourceItem,name:normalizeSpecialPortionName(sourceItem.name)};
   const key = recipeCacheKey(it);
   const cache = LS.get("mdp_recipe_cache", {});
   if (cache[key] && cache[key].recipe){ renderRecipeSheet(it, cache[key].recipe); return; }
@@ -3506,6 +3698,9 @@ async function openQuickRecipe(mi, ii){
     const r = await fetch(AI_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"recipe",item:{name:it.name,calories:it.calories,protein_g:it.protein_g,cuisine:it.cuisine||""},profile:{diet:profile?.diet||"vegetarian",cuisines:profile?.cuisines||[],conditions:profile?.conditions||[],allergies:profile?.allergies||"",dislikes:profile?.dislikes||""}})});
     const data = await r.json();
     if (!r.ok || !data.recipe) throw new Error(data.error||"recipe failed");
+    data.recipe.title = normalizeSpecialPortionName(data.recipe.title||it.name);
+    const unitInfo = foodUnitInfo(it.name);
+    if (unitInfo) data.recipe.servings = formatFoodAmount(it.name,1);
     cache[key] = {recipe:data.recipe,savedAt:Date.now()};
     const keep = Object.entries(cache).sort((a,b)=>(b[1].savedAt||0)-(a[1].savedAt||0)).slice(0,40);
     LS.set("mdp_recipe_cache",Object.fromEntries(keep));
@@ -3612,9 +3807,9 @@ function renderMeals(){
         <div style="flex:1;min-width:0;cursor:pointer" onclick="toggleEntryMenu('${e.id}')"><div class="nm">${esc(e.name)}</div>
         <div class="meta">${Math.round(e.cal*eq)} cal · ${Math.round(e.protein*eq)}g P · ${Math.round((e.carbs||0)*eq)}g C · ${Math.round((e.fat||0)*eq)}g F</div></div>
         <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
-          <button aria-label="Decrease serving" onclick="chgQty('${e.id}',-0.25)" style="background:var(--cardsoft);color:var(--muted);width:34px;height:34px;min-height:34px;padding:0;font-size:16px;border:1px solid var(--line);border-radius:9px">−</button>
-          <button aria-label="Edit serving amount" onclick="editQty('${e.id}')" style="font-size:11px;color:var(--muted);min-width:58px;min-height:34px;text-align:center;background:none">${eq} serving${eq===1?"":"s"}</button>
-          <button aria-label="Increase serving" onclick="chgQty('${e.id}',0.25)" style="background:var(--cardsoft);color:var(--muted);width:34px;height:34px;min-height:34px;padding:0;font-size:16px;border:1px solid var(--line);border-radius:9px">+</button>
+          <button aria-label="Decrease amount" onclick="chgQty('${e.id}',-0.25)" style="background:var(--cardsoft);color:var(--muted);width:34px;height:34px;min-height:34px;padding:0;font-size:16px;border:1px solid var(--line);border-radius:9px">−</button>
+          <button aria-label="Edit food amount" onclick="editQty('${e.id}')" style="font-size:11px;color:var(--muted);min-width:58px;min-height:34px;text-align:center;background:none">${formatFoodAmount(e.name,eq)}</button>
+          <button aria-label="Increase amount" onclick="chgQty('${e.id}',0.25)" style="background:var(--cardsoft);color:var(--muted);width:34px;height:34px;min-height:34px;padding:0;font-size:16px;border:1px solid var(--line);border-radius:9px">+</button>
         </div>
         <button class="x" onclick="removeEntry('${e.id}')" aria-label="Remove">✕</button>
       </div>${entryMenu===e.id?`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:-2px 2px 10px;padding-left:2px"><span style="font-size:11px;color:var(--faint)">Move to:</span>${MEALS.filter(m=>m!==e.meal).map(m=>`<button class="cuisine-chip" onclick="moveEntry('${e.id}','${m}')">${m}</button>`).join("")}</div>`:""}`}).join("")}`}
@@ -3713,12 +3908,15 @@ function chgQty(id, d){
 }
 function editQty(id){
   const e=log.find(x=>x.id===id);if(!e)return;
-  const value=Number(prompt("Serving amount (0.25 to 10):",e.qty||1));if(!value)return;
-  e.qty=Math.min(10,Math.max(.25,Math.round(value*4)/4));persistLog();
+  const info=foodUnitInfo(e.name), current=e.qty||1;
+  const value=Number(prompt(info ? `Amount in ${info.unit}${info.unit==="cup"?"s":""}:` : "Serving amount (0.25 to 10):",info?Math.round(info.amount*current*100)/100:current));if(!value)return;
+  const multiplier=info?value/info.amount:value;
+  e.qty=Math.min(10,Math.max(.25,Math.round(multiplier*4)/4));persistLog();
 }
 function addEntry(name, cal, protein, meal, carbs, fat){
-  const m = (carbs!=null && fat!=null) ? {carbs, fat} : estimateMacros(name, cal, protein);
-  log.push({id:uid(), name, cal, protein, carbs:m.carbs, fat:m.fat, qty:1, meal, ts:Date.now()});
+  const normalizedName = normalizeSpecialPortionName(name);
+  const m = (carbs!=null && fat!=null) ? {carbs, fat} : estimateMacros(normalizedName, cal, protein);
+  log.push({id:uid(), name:normalizedName, cal, protein, carbs:m.carbs, fat:m.fat, qty:1, meal, ts:Date.now()});
   addingTo = null;
   persistLog();
 }
@@ -3728,7 +3926,7 @@ function addFromLibrary(fid, meal){
 }
 function addFromDB(name, cal, protein, meal){ addEntry(name, cal, protein, meal); }
 function addManual(meal){
-  const name = document.getElementById("mName").value.trim();
+  const name = normalizeSpecialPortionName(document.getElementById("mName").value.trim());
   const cal = Number(document.getElementById("mCal").value) || 0;
   const pro = Number(document.getElementById("mPro").value) || 0;
   const cv = document.getElementById("mCarb").value, fv = document.getElementById("mFat").value;
@@ -3760,6 +3958,7 @@ function saveTargets(){
 
 // ================= Backup =================
 function exportData(){
+  migrateFoodUnitsInStorage(true);
   const data = {};
   for (let i=0;i<localStorage.length;i++){
     const k = localStorage.key(i);
@@ -3779,6 +3978,9 @@ function importData(ev){
     try {
       const data = JSON.parse(r.result);
       Object.keys(data).forEach(k => { if (k.startsWith("mdp_")) localStorage.setItem(k, data[k]); });
+      // Backups from every prior release are accepted, then normalized before
+      // the reload so legacy personal foods cannot reintroduce old unit labels.
+      migrateFoodUnitsInStorage(true);
       location.reload();
     } catch { alert("Couldn't read that backup file."); }
   };
@@ -3844,9 +4046,10 @@ function renderAiResults(){
 function aiConfirm(){
   let savedAny = false;
   aiItems.forEach(it => {
-    log.push({id:uid(), name:it.name, cal:it.cal, protein:it.protein, carbs:it.carbs||0, fat:it.fat||0, qty:1, meal:it.meal, ts:Date.now()});
-    if (!foods.some(f => f.name === it.name)){
-      foods.push({id:uid(), name:it.name, cal:it.cal, protein:it.protein, carbs:it.carbs||0, fat:it.fat||0, meal:it.meal});
+    const name = normalizeSpecialPortionName(it.name);
+    log.push({id:uid(), name, cal:it.cal, protein:it.protein, carbs:it.carbs||0, fat:it.fat||0, qty:1, meal:it.meal, ts:Date.now()});
+    if (!foods.some(f => f.name === name)){
+      foods.push({id:uid(), name, cal:it.cal, protein:it.protein, carbs:it.carbs||0, fat:it.fat||0, meal:it.meal});
       savedAny = true;
     }
   });
