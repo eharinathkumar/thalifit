@@ -1,20 +1,172 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#07111F"><title>Thalify privacy</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07111F">
+  <meta name="description" content="Thalify Privacy Policy: how the app handles nutrition, activity, profile, camera, voice, and AI-request data.">
+  <title>Thalify Privacy Policy</title>
   <style>
-    body{margin:0;background:#07111f;color:#f8f4ed;font:16px/1.7 Arial,sans-serif}
-    main{max-width:720px;margin:auto;padding:48px 24px}a{color:#ff8b84}
-    h1{font-size:42px;letter-spacing:-.04em;margin:0 0 24px}
-    section{background:#101f31;border:1px solid #24364b;border-radius:24px;padding:24px;margin:18px 0}
-    h2{margin-top:0;font-size:20px}p{color:#b9c4d1}
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --card: #101f31;
+      --card-soft: #0b1828;
+      --line: #2a3d52;
+      --text: #f8f4ed;
+      --muted: #b9c4d1;
+      --accent: #ff8b84;
+      --leaf: #a9dc7a;
+      --focus: #ffd166;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top right, rgba(255,139,132,.12), transparent 34rem), var(--bg);
+      color: var(--text);
+      font: 16px/1.7 Arial, Helvetica, sans-serif;
+    }
+    main { max-width: 820px; margin: auto; padding: 40px 22px 64px; }
+    a { color: var(--accent); text-underline-offset: 3px; }
+    a:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; border-radius: 4px; }
+    .back { display: inline-block; margin-bottom: 28px; font-weight: 700; }
+    .eyebrow { color: var(--leaf); font-size: 13px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { font-size: clamp(36px, 8vw, 58px); line-height: 1.02; letter-spacing: -.045em; margin: 6px 0 14px; }
+    h2 { font-size: 22px; line-height: 1.25; margin: 0 0 10px; }
+    h3 { font-size: 17px; margin: 22px 0 6px; }
+    p, li { color: var(--muted); }
+    strong { color: var(--text); }
+    .updated { margin: 0 0 26px; color: var(--muted); }
+    .summary {
+      background: linear-gradient(135deg, rgba(169,220,122,.12), rgba(255,139,132,.08));
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 22px;
+      margin: 24px 0;
+    }
+    section { background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 24px; margin: 18px 0; }
+    ul { padding-left: 22px; margin: 10px 0 0; }
+    li + li { margin-top: 8px; }
+    .contact { background: var(--card-soft); }
+    .fine { font-size: 14px; }
+    @media (max-width: 520px) {
+      main { padding: 28px 16px 48px; }
+      section, .summary { border-radius: 18px; padding: 20px; }
+    }
   </style>
 </head>
-<body><main>
-  <a href="index.html">← Back to Thalify</a><h1>Your data stays yours.</h1>
-  <section><h2>On-device by default</h2><p>Your profile, food log, activity, weight, water, and health readings are stored in this browser on this device.</p></section>
-  <section><h2>AI requests</h2><p>When you deliberately use an AI feature, only the information needed for that request is sent to the configured Thalify AI service. Health readings are not sent to AI.</p></section>
-  <section><h2>Backups</h2><p>You control exported backup files. Keep them somewhere private and import them only on devices you trust.</p></section>
-  <p>Thalify provides estimates and food coaching, not medical advice.</p>
-</main></body></html>
+<body>
+  <main>
+    <a class="back" href="index.html">← Back to Thalify</a>
+    <div class="eyebrow">Privacy policy</div>
+    <h1>Thalify Privacy Policy</h1>
+    <p class="updated"><strong>Effective and last updated:</strong> August 8, 2026</p>
+
+    <div class="summary">
+      <strong>The short version:</strong> Thalify stores your day-to-day profile, food, activity, weight, water, and manually entered health data on your device by default. Data is sent outside your device only when needed for a feature you choose to use, such as an AI request, barcode lookup, voice input, or website delivery. Thalify does not sell personal data and does not use it for advertising.
+    </div>
+
+    <section>
+      <h2>1. Who we are</h2>
+      <p>Thalify is a nutrition, activity, and wellness-planning app operated by the independent developer of Thalify ("Thalify," "we," "us," or "our").</p>
+      <p><strong>App and service:</strong> Thalify<br>
+        <strong>Privacy contact:</strong> <a href="mailto:thalify.admin@gmail.com">thalify.admin@gmail.com</a></p>
+    </section>
+
+    <section>
+      <h2>2. Information handled by Thalify</h2>
+      <p>Depending on the features you use, Thalify may handle:</p>
+      <ul>
+        <li><strong>Profile and goals:</strong> name or nickname, age, sex, height, weight, goal weight, measurement units, diet, cuisines, activity level, average steps, health goals, conditions, allergies, dislikes, and preferences.</li>
+        <li><strong>Nutrition and wellness records:</strong> foods, portions, calories, protein and other estimated macros, meal plans, recipes, water, weight history, manually entered health readings, check-in results, and coaching notes.</li>
+        <li><strong>Activity records:</strong> exercises, duration, sets, repetitions, weights, estimated calories, and muscle groups.</li>
+        <li><strong>Information you submit to AI:</strong> food descriptions, exercise names, and the relevant profile, goals, dietary restrictions, recent food summaries, or progress summaries required to answer the request.</li>
+        <li><strong>Barcode information:</strong> a detected barcode number used to request public product and nutrition data.</li>
+        <li><strong>Technical information:</strong> ordinary internet request information such as IP address, browser or device type, timestamps, and diagnostic or security metadata that hosting and service providers may receive automatically.</li>
+      </ul>
+      <p>Thalify does not require an account in the current version and does not intentionally request your contacts, precise location, photos, or advertising identifier.</p>
+    </section>
+
+    <section>
+      <h2>3. On-device storage</h2>
+      <p>Your profile, logs, plans, settings, and manually entered health information are stored in the app's local browser storage on your device by default. They are not automatically synchronized to a Thalify user account or cloud database.</p>
+      <p>If you create a backup, the backup file is generated on your device. You decide where to store it and when to import it. Anyone with access to that file may be able to read its contents, so keep it in a private location.</p>
+    </section>
+
+    <section>
+      <h2>4. AI features</h2>
+      <p>AI features run only when you choose an action such as building a profile plan, describing a meal, looking up an exercise, generating a meal plan or recipe, or running a weekly check-in. Thalify sends the minimum relevant request data to the Thalify AI service over HTTPS.</p>
+      <p>The service may route the request to a configured AI provider, which can include OpenAI, Anthropic, or Moonshot AI/Kimi. Those providers process the request to return the result and may retain limited request or security information under their own service terms and settings. Thalify does not send your complete on-device database with every request.</p>
+      <p>Manually entered health readings are not sent to AI. A weekly check-in may send summarized nutrition and weight progress, targets, goals, dietary restrictions, conditions, habits, and coaching notes so the requested advice can be personalized.</p>
+    </section>
+
+    <section>
+      <h2>5. Camera, barcode, and voice features</h2>
+      <h3>Camera and barcode scanning</h3>
+      <p>If you choose Scan package, Thalify asks for camera access. Camera frames are analyzed on your device to detect a barcode and are not uploaded or stored by Thalify. The detected barcode number is sent to the Open Food Facts service to retrieve product information.</p>
+      <h3>Voice input</h3>
+      <p>If you choose voice input, your browser or operating system may process microphone audio through its speech-recognition service. Thalify receives the resulting text, not a saved audio recording. The transcribed text is then handled like text you type and may be sent to the Thalify AI service when you submit it.</p>
+      <p>You can deny camera or microphone permission and continue using manual entry.</p>
+    </section>
+
+    <section>
+      <h2>6. Service providers and sharing</h2>
+      <p>Thalify shares information only as needed to provide a feature, maintain security, comply with law, or protect users. Depending on the feature, recipients can include:</p>
+      <ul>
+        <li><strong>GitHub Pages</strong> for delivering the web application and privacy page.</li>
+        <li><strong>Cloudflare</strong> for the Thalify AI gateway, network delivery, and security.</li>
+        <li><strong>Configured AI providers</strong> such as OpenAI, Anthropic, or Moonshot AI/Kimi for requests you initiate.</li>
+        <li><strong>Open Food Facts</strong> for barcode-based public food information.</li>
+        <li><strong>Your browser, operating system, or speech provider</strong> when you choose voice input.</li>
+        <li><strong>Google Play and Android services</strong> for app distribution, installation, integrity, and related platform functions.</li>
+      </ul>
+      <p><strong>Thalify does not sell or rent personal data and does not share it for targeted advertising.</strong></p>
+    </section>
+
+    <section>
+      <h2>7. How information is used</h2>
+      <ul>
+        <li>To save and display the records, goals, trends, and settings you request.</li>
+        <li>To calculate estimates and create nutrition, activity, meal-plan, recipe, and check-in results.</li>
+        <li>To retrieve product information after you scan a barcode.</li>
+        <li>To operate, secure, troubleshoot, and improve the reliability of the app and its services.</li>
+        <li>To meet legal obligations and respond to valid requests where required.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>8. Retention and deletion</h2>
+      <p>On-device information remains until you delete individual entries, clear Thalify's app or site data, remove the app, or restore a different backup. Backup files remain wherever you chose to save them until you delete them.</p>
+      <p>Thalify does not maintain a current user-account database that can be used to restore your local records. Service providers may retain limited request, security, or diagnostic information for their own permitted periods. To ask a privacy question or request deletion of information that may be associated with a service interaction, contact <a href="mailto:thalify.admin@gmail.com">thalify.admin@gmail.com</a>. We may need enough detail to locate the request, and in some cases no server-side record capable of being linked back to you may exist.</p>
+    </section>
+
+    <section>
+      <h2>9. Security</h2>
+      <p>Thalify uses HTTPS for network requests and keeps AI provider credentials on the server rather than inside the app. We limit transmitted information to what is needed for the selected feature. No storage or transmission method is completely secure, so protect your device and any exported backups with appropriate device security.</p>
+    </section>
+
+    <section>
+      <h2>10. Health information and medical disclaimer</h2>
+      <p>Thalify provides estimates, planning tools, and general wellness coaching. It is not a medical device and does not provide diagnosis, treatment, or emergency advice. Do not rely on Thalify as a substitute for a qualified healthcare professional.</p>
+      <p>The current version does not automatically import data from Health Connect or an activity tracker. If a future release adds that capability, Thalify will request permission, use the information only for user-facing health and fitness features, and update this policy and the Google Play Data safety disclosures before that collection begins.</p>
+    </section>
+
+    <section>
+      <h2>11. Children</h2>
+      <p>Thalify is not directed to children under 13 and is not intended for independent use by children. If you believe a child has provided personal information through a network feature, contact us so we can review the situation.</p>
+    </section>
+
+    <section>
+      <h2>12. Changes to this policy</h2>
+      <p>We may update this policy when Thalify's features, providers, or legal obligations change. The effective date at the top will be updated when changes are published. Material changes will be reflected in the app or store disclosures when required.</p>
+    </section>
+
+    <section class="contact">
+      <h2>13. Contact</h2>
+      <p>For questions, concerns, or privacy requests, email <a href="mailto:thalify.admin@gmail.com">thalify.admin@gmail.com</a>.</p>
+      <p class="fine">This page is the direct, public privacy policy for the Thalify Android app and web application.</p>
+    </section>
+  </main>
+</body>
+</html>
