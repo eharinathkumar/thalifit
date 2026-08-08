@@ -1,4 +1,4 @@
-const CACHE = "thalify-v5.4.0-production-baseline";
+const CACHE = "thalify-v5.5.3-heart-checkins-schema-v3";
 const ASSETS = ["./","./index.html","./manifest.json","./privacy.html","./icon-192.png","./icon-512.png","./brand-mark.svg"];
 
 self.addEventListener("install", e => {
