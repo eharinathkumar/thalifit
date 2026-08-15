@@ -1,1 +1,68 @@
-placeholder
+(function(){'use strict';
+const VERSION='5.6.2';
+const G='mdp_kitchen_groceries',P='mdp_kitchen_pantry';
+
+const css=`
+#shoppingMode{z-index:205;background:var(--bg)}
+#shoppingMode .fullpage-head{padding-top:max(14px,env(safe-area-inset-top))}
+.shop-body{padding-top:14px!important}
+.shop-progress{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.shop-progress strong{font:650 24px 'Fraunces',Georgia,serif}.shop-progress span{font-size:11.5px;color:var(--muted)}
+.shop-add{display:flex;gap:8px;position:sticky;top:0;background:var(--bg);padding:4px 0 12px;z-index:3}
+.shop-add input{flex:1;background:var(--card)}
+.shop-add button{flex:0 0 auto;padding:0 16px}
+.shop-section{margin-top:16px}.shop-section-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:10px;font-weight:800;letter-spacing:.09em;color:var(--faint)}
+.shop-row{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 12px;margin-bottom:8px;min-height:54px}
+.shop-row.done{opacity:.72}.shop-check{width:27px;height:27px;border-radius:9px;border:2px solid var(--line);background:var(--cardsoft);display:grid;place-items:center;color:#1a1508;font-size:16px;flex:0 0 27px}.shop-row:not(.done) .shop-check{color:transparent}.shop-row.done .shop-check{background:var(--leaf);border-color:var(--leaf);color:#141a0c}.shop-name{flex:1;font-size:15px;line-height:1.25}.shop-row.done .shop-name{text-decoration:line-through;color:var(--muted)}.shop-remove{background:none;color:var(--faint);font-size:20px;padding:5px 7px}
+.shop-empty{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:18px 14px;text-align:center;font-size:12px;color:var(--muted);line-height:1.5}
+.shop-footer{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0 10px}.shop-footer button{width:100%}
+.shop-open-btn{width:100%;margin-top:12px;background:var(--cardsoft);border:1px solid var(--line);color:var(--turmeric);padding:10px 12px;font-weight:700;font-size:12px}
+.shop-share-btn{color:var(--turmeric)!important;font-weight:700!important}
+@media(min-width:560px){#shoppingMode .fullpage-body{max-width:620px}.shop-row{padding:14px 15px}}
+`;
+function injectStyle(){if(document.getElementById('v562style'))return;const s=document.createElement('style');s.id='v562style';s.textContent=css;document.head.appendChild(s)}
+function read(k,fb){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb}catch{return fb}}
+function write(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch{return false}}
+function clean(v){return String(v||'').replace(/^\s*✓\s*/,'').trim()}
+function groceryNameKey(v){return clean(v).normalize('NFKC').toLowerCase().replace(/[\u2018\u2019'".,;:!?()[\]{}]/g,' ').replace(/[-_/]+/g,' ').replace(/\s+/g,' ').trim()}
+function pantry(){return read(P,[])}function groceries(){return read(G,[])}
+function identity(g){return g?.sourcePantryId?`pantry:${g.sourcePantryId}`:`name:${groceryNameKey(g?.n||'')}`}
+function migrate(){const a=groceries();let changed=false;for(const g of a){const k=identity(g);if(g.groceryKey!==k){g.groceryKey=k;changed=true}}if(changed)write(G,a);return a}
+function findExisting(name,sourcePantryId){const a=migrate(),key=sourcePantryId?`pantry:${sourcePantryId}`:`name:${groceryNameKey(name)}`;return a.find(g=>g.groceryKey===key)||null}
+function strictAdd(name,sourcePantryId){name=clean(name);if(!name)return{added:false,empty:true};const a=migrate(),key=sourcePantryId?`pantry:${sourcePantryId}`:`name:${groceryNameKey(name)}`;let x=a.find(g=>g.groceryKey===key);if(x){const wasPending=!x.done;x.done=false;x.n=name;x.groceryKey=key;if(sourcePantryId){x.sourcePantryId=sourcePantryId;x.source='pantry'}write(G,a);return{added:!wasPending,item:x}}x={id:'g562'+Date.now()+Math.random().toString(36).slice(2,8),n:name,done:false,groceryKey:key,source:sourcePantryId?'pantry':'direct'};if(sourcePantryId)x.sourcePantryId=sourcePantryId;a.push(x);write(G,a);return{added:true,item:x}}
+function toast(msg){if(typeof window.toast==='function'){window.toast(msg);return}let t=document.getElementById('kitchenUxToast');if(!t){t=document.createElement('div');t.id='kitchenUxToast';t.className='kitchen-toast';document.body.appendChild(t)}t.textContent=msg;t.classList.add('show');clearTimeout(window._v562toast);window._v562toast=setTimeout(()=>t.classList.remove('show'),1700)}
+function sheetStatus(msg){let b=document.getElementById('kitchenSheetBody');if(!b)return;let s=document.getElementById('kuxSheetStatus');if(!s){s=document.createElement('div');s.id='kuxSheetStatus';s.className='kux-status';const i=b.querySelector('input'),a=i?.nextElementSibling||b.querySelector('.kshead');if(a)a.insertAdjacentElement('afterend',s);else b.appendChild(s)}s.textContent=msg}
+function decorateGroceryChips(){const b=document.getElementById('kitchenSheetBody');if(!b)return;const pending=new Set(migrate().filter(x=>!x.done).map(x=>x.groceryKey));b.querySelectorAll('.kgchips button').forEach(btn=>{const base=clean(btn.textContent),selected=pending.has(`name:${groceryNameKey(base)}`);btn.classList.toggle('kselected',selected);btn.setAttribute('aria-pressed',selected?'true':'false');btn.textContent=(selected?'✓ ':'')+base})}
+function refreshKitchen(){try{if(document.getElementById('tab-kitchen')&&!document.getElementById('tab-kitchen').classList.contains('hide'))window.showTab('kitchen')}catch{}setTimeout(enhanceKitchen,0)}
+function lowPantryNotInGroceries(){return pantry().filter(p=>p.low&&!findExisting(p.n,p.id))}
+
+window.openGroceryAdd=function(){const body=document.getElementById('kitchenSheetBody'),sheet=document.getElementById('kitchenSheet');if(!body||!sheet)return;const low=lowPantryNotInGroceries(),common=['Bananas','Milk','Bread','Tomatoes','Eggs','Yogurt','Spinach','Onion'];body.innerHTML=`<div class="kshead"><h3 style="margin:0">Add grocery</h3><button class="btn-ghost" onclick="closeKitchenSheet()">✕</button></div><input id="kginput" style="margin-top:12px" placeholder="What do you need?"><button class="btn-main" style="width:100%;margin-top:9px" onclick="addGroceryDirect()">Add to groceries</button>${low.length?`<div class="ksec">LOW IN YOUR PANTRY</div><div class="kgchips">${low.map(x=>`<button onclick="quickGroceryFromPantry('${x.id}')">${clean(x.n)}</button>`).join('')}</div>`:''}<div class="ksec">RECENT / COMMON</div><div class="kgchips">${common.map(x=>`<button onclick="quickGrocery('${x}')">${x}</button>`).join('')}</div>`;sheet.classList.remove('hide');decorateGroceryChips();setTimeout(()=>document.getElementById('kginput')?.focus(),50)};
+window.addGroceryDirect=function(){const i=document.getElementById('kginput'),v=clean(i?.value);if(!v)return;const r=strictAdd(v);sheetStatus(r.added?`✓ ${v} added to Groceries`:`${v} is already in Groceries`);if(i){i.value='';i.focus()}decorateGroceryChips();refreshKitchen();if(shoppingVisible())renderShopping()};
+window.quickGrocery=function(v){const r=strictAdd(v);sheetStatus(r.added?`✓ ${v} added to Groceries`:`${v} is already in Groceries`);decorateGroceryChips();refreshKitchen();if(shoppingVisible())renderShopping()};
+window.quickGroceryFromPantry=function(id){const p=pantry().find(x=>x.id===id);if(!p)return;const r=strictAdd(p.n,p.id);sheetStatus(r.added?`✓ ${p.n} added to Groceries`:`${p.n} is already in Groceries`);decorateGroceryChips();refreshKitchen();if(shoppingVisible())renderShopping()};
+window.addPantryToGroceries=function(id){const p=pantry().find(x=>x.id===id);if(!p)return;const r=strictAdd(p.n,p.id);refreshKitchen();toast(r.added?`✓ ${p.n} added to Groceries`:`${p.n} is already in Groceries`)};
+
+const priorAddMissing=window.addMissing;if(typeof priorAddMissing==='function')window.addMissing=function(id){priorAddMissing(id);migrate();refreshKitchen()};
+
+function scaffoldShopping(){injectStyle();if(document.getElementById('shoppingMode'))return;const d=document.createElement('div');d.id='shoppingMode';d.className='fullpage hide';d.innerHTML=`<div class="fullpage-head"><button onclick="closeShoppingList()" class="btn-ghost" style="padding:8px 12px;font-weight:600">← Kitchen</button><h3 style="margin:0;font-family:'Fraunces',Georgia,serif;font-size:20px">Shopping list</h3><button onclick="shareShoppingList()" class="btn-ghost shop-share-btn" style="padding:8px 12px">Share</button></div><div id="shoppingBody" class="fullpage-body shop-body"></div>`;document.body.appendChild(d)}
+function shoppingVisible(){const d=document.getElementById('shoppingMode');return !!d&&!d.classList.contains('hide')}
+function shoppingText(){const pending=migrate().filter(x=>!x.done);if(!pending.length)return'Thalify grocery list\n\nAll items are picked up.';return`Thalify grocery list\n\n${pending.map(x=>'□ '+x.n).join('\n')}\n\n${pending.length} item${pending.length===1?'':'s'} left`}
+function copyText(text){if(navigator.clipboard?.writeText)return navigator.clipboard.writeText(text);return new Promise((resolve,reject)=>{try{const t=document.createElement('textarea');t.value=text;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();const ok=document.execCommand('copy');t.remove();ok?resolve():reject(new Error('copy failed'))}catch(e){reject(e)}})}
+function restorePantryFromGrocery(g){if(!g?.sourcePantryId)return;const a=pantry(),p=a.find(x=>x.id===g.sourcePantryId);if(p&&p.low){p.low=false;write(P,a);toast(`✓ ${p.n} restocked in Pantry`)}}
+function toggleShopping(id){const a=migrate(),g=a.find(x=>x.id===id);if(!g)return;g.done=!g.done;write(G,a);if(g.done)restorePantryFromGrocery(g);renderShopping();refreshKitchen()}
+function removeShopping(id){write(G,migrate().filter(x=>x.id!==id));renderShopping();refreshKitchen()}
+function addFromShopping(){const i=document.getElementById('shopAddInput'),v=clean(i?.value);if(!v)return;const r=strictAdd(v);if(i){i.value='';i.focus()}renderShopping();refreshKitchen();toast(r.added?`✓ ${v} added`:`${v} is already on the list`)}
+function row(g){return`<div class="shop-row ${g.done?'done':''}"><button class="shop-check" onclick="toggleShoppingItem('${g.id}')" aria-label="${g.done?'Mark '+clean(g.n)+' not picked up':'Mark '+clean(g.n)+' picked up'}">✓</button><div class="shop-name">${clean(g.n).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div><button class="shop-remove" onclick="removeShoppingItem('${g.id}')" aria-label="Remove ${clean(g.n)}">×</button></div>`}
+function renderShopping(){scaffoldShopping();const body=document.getElementById('shoppingBody');if(!body)return;const a=migrate(),pending=a.filter(x=>!x.done),done=a.filter(x=>x.done);body.innerHTML=`<div class="shop-progress"><div><strong>${pending.length}</strong><span> left to pick up</span></div><span>${done.length} picked up</span></div><div class="shop-add"><input id="shopAddInput" placeholder="Add an item" autocomplete="off" onkeydown="if(event.key==='Enter')addShoppingItem()"><button class="btn-main" onclick="addShoppingItem()">Add</button></div><div class="shop-section"><div class="shop-section-hd"><span>TO PICK UP</span><span>${pending.length}</span></div>${pending.length?pending.map(row).join(''):'<div class="shop-empty">Everything is checked off. Add another item or head home.</div>'}</div>${done.length?`<div class="shop-section"><div class="shop-section-hd"><span>PICKED UP</span><span>${done.length}</span></div>${done.map(row).join('')}</div>`:''}<div class="shop-footer"><button class="btn-ghost" onclick="copyShoppingList()">Copy list</button><button class="btn-main" onclick="shareShoppingList()">Share list</button></div><div class="knote">Shopping mode stays on this device. Live shared lists can come later in the native app.</div>`}
+window.openShoppingList=function(){scaffoldShopping();migrate();renderShopping();document.getElementById('shoppingMode').classList.remove('hide');setTimeout(()=>document.getElementById('shopAddInput')?.focus(),80)};
+window.closeShoppingList=function(){document.getElementById('shoppingMode')?.classList.add('hide');refreshKitchen()};
+window.toggleShoppingItem=toggleShopping;window.removeShoppingItem=removeShopping;window.addShoppingItem=addFromShopping;
+window.copyShoppingList=async function(){try{await copyText(shoppingText());toast('✓ Grocery list copied')}catch{toast('Could not copy the list')}};
+window.shareShoppingList=async function(){const text=shoppingText();try{if(navigator.share){await navigator.share({title:'Thalify grocery list',text});return}await copyText(text);toast('Share is unavailable here · list copied instead')}catch(e){if(e?.name!=='AbortError'){try{await copyText(text);toast('List copied instead')}catch{toast('Could not share the list')}}}};
+
+function enhanceKitchen(){const root=document.getElementById('kitchenContent');if(!root)return;const cards=[...root.querySelectorAll('.kcard')],g=cards.find(c=>c.querySelector('.kcollapse b')?.textContent.trim()==='Groceries');if(g&&!g.querySelector('.shop-open-btn')){const b=document.createElement('button');b.type='button';b.className='shop-open-btn';b.textContent='Open shopping list →';b.onclick=window.openShoppingList;g.appendChild(b)}}
+function observeKitchen(){const root=document.getElementById('kitchenContent');if(!root||root.dataset.v562Observed)return;root.dataset.v562Observed='1';new MutationObserver(()=>setTimeout(enhanceKitchen,0)).observe(root,{childList:true,subtree:true})}
+const oldShow=window.showTab;if(typeof oldShow==='function')window.showTab=function(n){oldShow(n);if(n==='kitchen'){setTimeout(()=>{migrate();enhanceKitchen();observeKitchen()},0)}};
+
+injectStyle();scaffoldShopping();migrate();setTimeout(()=>{enhanceKitchen();observeKitchen()},0);document.documentElement.dataset.thalifyTwaFeatureRelease=VERSION;
+})();
