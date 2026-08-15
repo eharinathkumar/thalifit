@@ -1,37 +1,6 @@
-const CACHE = "thalify-v5.5.3-heart-checkins-schema-v3";
-const ASSETS = ["./","./index.html","./manifest.json","./privacy.html","./icon-192.png","./icon-512.png","./brand-mark.svg"];
-
-self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
-  self.skipWaiting();
-});
-
-self.addEventListener("activate", e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))));
-  self.clients.claim();
-});
-
-self.addEventListener("fetch", e => {
-  const req = e.request;
-
-  // Only ever handle same-origin GET requests. Everything else — POSTs to the AI
-  // worker, cross-origin font/CDN requests, etc. — passes straight to the network,
-  // untouched. The Cache API cannot store non-GET requests, so touching them here
-  // is what broke API calls with "Failed to convert value to 'Response'".
-  if (req.method !== "GET") return;                       // let the browser handle it
-  const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return;        // don't intercept cross-origin
-
-  e.respondWith(
-    fetch(req)
-      .then(r => {
-        // only cache valid, basic (same-origin) responses
-        if (r && r.status === 200 && r.type === "basic") {
-          const copy = r.clone();
-          caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
-        }
-        return r;
-      })
-      .catch(() => caches.match(req).then(hit => hit || Response.error()))
-  );
-});
+const CACHE="thalify-v5.6.0-kitchen-checkin";
+const ASSETS=["./","./index.html","./manifest.json","./privacy.html","./icon-192.png","./icon-512.png","./brand-mark.svg","./twa-v560.js"];
+async function enhanced(r){if(!r||r.status!==200)return r;let h=await r.text();h=h.replace('const APP_VERSION = "5.5.3";','const APP_VERSION = "5.6.0";');if(!h.includes('twa-v560.js'))h=h.replace('</body>','<script src="./twa-v560.js"></script>\n</body>');let x=new Headers(r.headers);x.delete('content-length');x.delete('content-encoding');x.set('content-type','text/html; charset=utf-8');return new Response(h,{status:r.status,statusText:r.statusText,headers:x})}
+self.addEventListener("install",e=>{e.waitUntil((async()=>{let c=await caches.open(CACHE);await c.addAll(ASSETS);for(const k of["./","./index.html"]){let r=await c.match(k);if(r)await c.put(k,await enhanced(r))}})());self.skipWaiting()});
+self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))));self.clients.claim()});
+self.addEventListener("fetch",e=>{let q=e.request;if(q.method!=="GET")return;let u=new URL(q.url);if(u.origin!==self.location.origin)return;e.respondWith((async()=>{try{let r=await fetch(q),o=r;if(r.status===200&&r.type==="basic"&&(q.mode==="navigate"||u.pathname.endsWith("/")||u.pathname.endsWith("/index.html")))o=await enhanced(r.clone());if(o.status===200)caches.open(CACHE).then(c=>c.put(q,o.clone())).catch(()=>{});return o}catch{return await caches.match(q)||Response.error()}})())});
