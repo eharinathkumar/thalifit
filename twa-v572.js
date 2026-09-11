@@ -116,7 +116,7 @@ function wrapShopping(){
   const oldClose=window.closeShoppingList;if(typeof oldClose==='function')window.closeShoppingList=function(){purgeCompletedGroceries();const out=oldClose.apply(this,arguments);setTimeout(applyKitchenLayout,0);return out};
 }
 function wrapTabs(){const oldShow=window.showTab;if(typeof oldShow!=='function')return;window.showTab=function(n){const wasKitchen=kitchenVisible();const out=oldShow.apply(this,arguments);if(n==='kitchen'){if(!wasKitchen)activeSection=null;setTimeout(applyKitchenLayout,0)}return out}}
-function observeKitchen(){const root=document.getElementById('kitchenContent');if(!root||root.dataset.v572Observed)return;root.dataset.v572Observed='1';new MutationObserver(()=>setTimeout(applyKitchenLayout,0)).observe(root,{childList:true,subtree:true})}
+function observeKitchen(){const root=document.getElementById('kitchenContent');if(!root||root.dataset.v572Observed)return;root.dataset.v572Observed='1';new MutationObserver(()=>setTimeout(applyKitchenLayout,0)).observe(root,{childList:true})}
 function boot(){injectStyle();wrapShopping();wrapTabs();setTimeout(()=>{observeKitchen();applyKitchenLayout();if(shoppingVisible())watchShopping()},0);document.documentElement.dataset.thalifyTwaFeatureRelease=VERSION}
 
 if(typeof window.showTab==='function'&&document.getElementById('tab-kitchen'))boot();else{
