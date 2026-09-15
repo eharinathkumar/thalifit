@@ -1,7 +1,7 @@
-const CACHE="thalify-v5.6.16-pwa-backup-hardening";
-const APP_VERSION="5.6.16";
-const ASSETS=["./","./index.html","./manifest.json","./privacy.html","./icon-192.png","./icon-512.png","./brand-mark.svg","./twa-v560.js","./twa-v561.js","./twa-v562.js","./twa-v563.js","./twa-v564.js","./twa-v565.js","./twa-v567.js","./twa-v570.js","./twa-v571.js","./twa-v572.js","./twa-v573.js","./twa-v574.js","./twa-v575.js","./twa-v576.js"];
-const APP_SCRIPTS=["twa-v560.js","twa-v561.js","twa-v562.js","twa-v563.js","twa-v564.js","twa-v565.js","twa-v567.js","twa-v570.js","twa-v571.js","twa-v572.js","twa-v573.js","twa-v574.js","twa-v575.js","twa-v576.js"];
+const CACHE="thalify-v5.6.17-dialogs-qc";
+const APP_VERSION="5.6.17";
+const ASSETS=["./","./index.html","./manifest.json","./privacy.html","./icon-192.png","./icon-512.png","./brand-mark.svg","./twa-v560.js","./twa-v561.js","./twa-v562.js","./twa-v563.js","./twa-v564.js","./twa-v565.js","./twa-v567.js","./twa-v570.js","./twa-v571.js","./twa-v572.js","./twa-v573.js","./twa-v574.js","./twa-v575.js","./twa-v576.js","./twa-v577.js"];
+const APP_SCRIPTS=["twa-v560.js","twa-v561.js","twa-v562.js","twa-v563.js","twa-v564.js","twa-v565.js","twa-v567.js","twa-v570.js","twa-v571.js","twa-v572.js","twa-v573.js","twa-v574.js","twa-v575.js","twa-v576.js","twa-v577.js"];
 const ASSET_URLS=new Set(ASSETS.map(a=>new URL(a,self.location.href).href));
 async function enhanced(r){if(!r||r.status!==200)return r;let h=await r.text();h=h.replace('const APP_VERSION = "5.5.3";',`const APP_VERSION = "${APP_VERSION}";`);for(const f of APP_SCRIPTS)if(!h.includes(f))h=h.replace('</body>',`<script src="./${f}"></script>\n</body>`);let x=new Headers(r.headers);x.delete('content-length');x.delete('content-encoding');x.set('content-type','text/html; charset=utf-8');return new Response(h,{status:r.status,statusText:r.statusText,headers:x})}
 self.addEventListener("install",e=>{e.waitUntil((async()=>{const c=await caches.open(CACHE);await c.addAll(ASSETS);for(const k of["./","./index.html"]){const r=await c.match(k);if(r)await c.put(k,await enhanced(r))}})());self.skipWaiting()});
