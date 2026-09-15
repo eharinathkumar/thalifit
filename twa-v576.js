@@ -73,7 +73,6 @@
     setTimeout(()=>URL.revokeObjectURL(url), 1500);
   }
   async function shareBackup(){
-    markBackedUp();
     const file = backupFile();
     try{
       if (navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
@@ -82,12 +81,14 @@
           text:'Thalify data backup. Keep this file somewhere safe so it can be restored after reinstalling.',
           files:[file]
         });
+        markBackedUp();
         return;
       }
     }catch(err){
       if (err && err.name === 'AbortError') return;
     }
     fallbackDownload(file);
+    markBackedUp();
   }
 
   function formatBackupStatus(){
@@ -276,6 +277,13 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refreshInjectedUi, {once:true});
   else refreshInjectedUi();
 
-  const observer = new MutationObserver(()=>refreshInjectedUi());
-  observer.observe(document.documentElement, {subtree:true, childList:true});
+  function observeRelevantUi(){
+    const observer = new MutationObserver(()=>refreshInjectedUi());
+    const profileHost = document.getElementById('profileContent');
+    const todayHost = document.getElementById('tab-today');
+    if (profileHost) observer.observe(profileHost, {childList:true});
+    if (todayHost) observer.observe(todayHost, {childList:true, subtree:true});
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', observeRelevantUi, {once:true});
+  else observeRelevantUi();
 })();
