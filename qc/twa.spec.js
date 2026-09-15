@@ -1,26 +1,67 @@
 const { test, expect } = require('@playwright/test');
 const { personas, buildStorage } = require('./personas');
 
+const AI_ORIGIN='https://thalifit-ai.harinathkumar.workers.dev';
+
 async function mockAi(page){
-  await page.route('https://thalifit-ai.harinathkumar.workers.dev/**', async route=>{
+  // Browser-level routing catches Chromium requests, but WebKit service-worker
+  // initiated fetches can bypass page.route(). Install a deterministic window
+  // fetch shim too, before app code runs, while leaving the real SW enabled.
+  await page.route(`${AI_ORIGIN}/**`, async route=>{
     const req=route.request();
     if(req.method()!=='POST') return route.continue();
     let body={};try{body=req.postDataJSON()}catch{}
-    if(body.type==='checkin'){
-      const p=body.progress||{};
-      const direction=p.goal==='gain'?75:p.goal==='lose'?-75:25;
-      return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({checkin:{
-        message:`${p.name||'Your'} QC check-in is complete. Your logged week is internally consistent.`,
-        focus_habit:p.goal==='gain'?'Add protein to the first meal.':'Keep the current logging rhythm and activity pattern.',
-        status:'on_track',
-        adjusted_calories:Number(p.calorie_target||2000)+direction,
-        adjusted_protein:Number(p.protein_target||100)+5,
-        updated_coach_notes:'Deterministic QC check-in response.'
-      }})});
-    }
-    if(body.type==='exercise_met')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({name:body.name||'Exercise',met:6})});
-    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({})});
+    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(mockAiBody(body))});
   });
+  await page.addInitScript(({origin})=>{
+    const realFetch=window.fetch.bind(window);
+    const responseFor=body=>{
+      if(body&&body.type==='checkin'){
+        const p=body.progress||{};
+        const direction=p.goal==='gain'?75:p.goal==='lose'?-75:25;
+        return {checkin:{
+          message:`${p.name||'Your'} QC check-in is complete. Your logged week is internally consistent.`,
+          focus_habit:p.goal==='gain'?'Add protein to the first meal.':'Keep the current logging rhythm and activity pattern.',
+          status:'on_track',
+          adjusted_calories:Number(p.calorie_target||2000)+direction,
+          adjusted_protein:Number(p.protein_target||100)+5,
+          updated_coach_notes:'Deterministic QC check-in response.'
+        }};
+      }
+      if(body&&body.type==='exercise_met')return{name:body.name||'Exercise',met:6};
+      return{};
+    };
+    window.fetch=async function(input,init){
+      const url=typeof input==='string'?input:(input&&input.url)||'';
+      const method=String((init&&init.method)||(input&&input.method)||'GET').toUpperCase();
+      if(url.startsWith(origin)&&method==='POST'){
+        let body={};
+        try{
+          const raw=(init&&init.body)||'';
+          body=typeof raw==='string'?JSON.parse(raw):{};
+        }catch{}
+        return new Response(JSON.stringify(responseFor(body)),{status:200,headers:{'content-type':'application/json'}});
+      }
+      return realFetch(input,init);
+    };
+  },{origin:AI_ORIGIN});
+}
+
+function mockAiBody(body){
+  if(body&&body.type==='checkin'){
+    const p=body.progress||{};
+    const direction=p.goal==='gain'?75:p.goal==='lose'?-75:25;
+    return {checkin:{
+      message:`${p.name||'Your'} QC check-in is complete. Your logged week is internally consistent.`,
+      focus_habit:p.goal==='gain'?'Add protein to the first meal.':'Keep the current logging rhythm and activity pattern.',
+      status:'on_track',
+      adjusted_calories:Number(p.calorie_target||2000)+direction,
+      adjusted_protein:Number(p.protein_target||100)+5,
+      updated_coach_notes:'Deterministic QC check-in response.'
+    }};
+  }
+  if(body&&body.type==='exercise_met')return{name:body.name||'Exercise',met:6};
+  return{};
 }
 
 async function boot(page,storage){
@@ -112,7 +153,7 @@ test('branded confirmations and inputs replace browser hostname popups',async({p
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('mdp_kitchen_groceries')||'[]').length)).toBe(5);
 
   await page.evaluate(()=>{void deleteShoppingList();});
-  await page.getByRole('button',{name:'Delete list'}).click();
+  await page.getByTestId('thalify-dialog-confirm').click();
   await expect(page.locator('#thalifyDialogRoot')).not.toHaveClass(/open/);
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('mdp_kitchen_groceries')||'[]').length)).toBe(0);
 
@@ -121,22 +162,22 @@ test('branded confirmations and inputs replace browser hostname popups',async({p
   await page.evaluate(()=>{void deleteMealPack('qc-pack');});
   await expect(page.locator('#thalifyDialogTitle')).toHaveText('Delete this meal pack?');
   await expect(page.locator('#thalifyDialogCopy')).toContainText('Historical food logs will stay unchanged');
-  await page.getByRole('button',{name:'Delete pack'}).click();
+  await page.getByTestId('thalify-dialog-confirm').click();
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('mdp_meal_packs_v1')||'[]').length)).toBe(0);
 
   await page.evaluate(()=>{void logWeightPrompt();});
   await expect(page.locator('#thalifyDialogTitle')).toHaveText('Log today’s weight');
   await page.getByTestId('thalify-dialog-input').fill('67.9');
-  await page.getByRole('button',{name:'Save weight'}).click();
+  await page.getByTestId('thalify-dialog-confirm').click();
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('mdp_profile')).weightKg)).toBe(67.9);
 
   await page.evaluate(()=>{void logReading('bp');});
   await expect(page.locator('#thalifyDialogTitle')).toHaveText('Log blood pressure');
   await page.getByTestId('thalify-dialog-input').fill('118');
-  await page.getByRole('button',{name:'Next'}).click();
+  await page.getByTestId('thalify-dialog-confirm').click();
   await expect(page.getByTestId('thalify-dialog-input')).toBeVisible();
   await page.getByTestId('thalify-dialog-input').fill('76');
-  await page.getByRole('button',{name:'Save reading'}).click();
+  await page.getByTestId('thalify-dialog-confirm').click();
   const readings=await page.evaluate(()=>JSON.parse(localStorage.getItem('mdp_readings')||'[]'));
   expect(readings.at(-1).value).toBe(118);expect(readings.at(-1).value2).toBe(76);
 
