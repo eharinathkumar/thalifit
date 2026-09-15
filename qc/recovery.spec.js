@@ -104,12 +104,15 @@ test('old installed PWA cache is superseded by the current service worker baseli
 
   const state=await page.evaluate(async()=>({
     version:window.__thalifyQC?.version,
-    release:document.documentElement.dataset.thalifyTwaFeatureRelease,
+    dialogs:document.documentElement.dataset.thalifyDialogs,
     caches:await caches.keys(),
     body:document.body.innerText.slice(0,5000)
   }));
+  // Per-feature release markers can intentionally remain at the feature's own
+  // version (for example the meal-pack layer is 5.6.14). The authoritative
+  // current shell/QC version is window.__thalifyQC.version from the newest layer.
   expect(state.version).toBe(CURRENT_VERSION);
-  expect(state.release).toBe(CURRENT_VERSION);
+  expect(state.dialogs).toBe('branded');
   expect(state.caches).toContain(CURRENT_CACHE);
   expect(state.caches).not.toContain('thalify-v5.6.16-old-installed-pwa');
   expect(state.body).not.toContain('OLD THALIFY SHELL');
