@@ -4,6 +4,7 @@
   const BUILD = '5.6.16';
   const LAST_BACKUP_KEY = 'mdp_last_backup_at';
   const BACKUP_REMINDER_KEY = 'mdp_backup_reminder_dismissed_at';
+  const BACKUP_FIRST_SEEN_KEY = 'mdp_backup_first_seen_at';
   const REMINDER_AFTER_DAYS = 7;
   const REMIND_AGAIN_DAYS = 30;
 
@@ -13,11 +14,29 @@
     const t = Date.parse(iso);
     return Number.isFinite(t) ? (Date.now() - t) / 86400000 : Infinity;
   }
+  function nonEmptyStoredValue(key){
+    const raw = localStorage.getItem(key);
+    if (!raw) return false;
+    try{
+      const value = JSON.parse(raw);
+      if (Array.isArray(value)) return value.length > 0;
+      if (value && typeof value === 'object') return Object.keys(value).length > 0;
+      return value !== null && value !== '';
+    }catch(_){ return true; }
+  }
   function hasUserData(){
+    if (nonEmptyStoredValue('mdp_profile')) return true;
+    for (const k of ['mdp_weights','mdp_readings','mdp_activity','mdp_planhistory','mdp_custom_exercises']){
+      if (nonEmptyStoredValue(k)) return true;
+    }
     for (let i=0;i<localStorage.length;i++){
       const k = localStorage.key(i) || '';
-      if (k.startsWith('mdp_') && k !== LAST_BACKUP_KEY && k !== BACKUP_REMINDER_KEY) return true;
+      if ((k.startsWith('mdp_log_') || k.startsWith('mdp_mealplan_') || k.startsWith('mdp_water_')) && nonEmptyStoredValue(k)) return true;
     }
+    try{
+      const storedFoods = JSON.parse(localStorage.getItem('mdp_foods') || '[]');
+      if (Array.isArray(storedFoods) && typeof DEFAULT_FOODS !== 'undefined' && storedFoods.length > DEFAULT_FOODS.length) return true;
+    }catch(_){ }
     return false;
   }
   function backupObject(){
@@ -143,8 +162,15 @@
 
   function shouldShowReminder(){
     if (!hasUserData()) return false;
+    let firstSeen = localStorage.getItem(BACKUP_FIRST_SEEN_KEY);
+    if (!firstSeen){
+      firstSeen = isoNow();
+      localStorage.setItem(BACKUP_FIRST_SEEN_KEY, firstSeen);
+      return false;
+    }
     const lastBackup = localStorage.getItem(LAST_BACKUP_KEY);
     const dismissed = localStorage.getItem(BACKUP_REMINDER_KEY);
+    if (!lastBackup && daysSince(firstSeen) < REMINDER_AFTER_DAYS) return false;
     if (lastBackup && daysSince(lastBackup) < REMIND_AGAIN_DAYS) return false;
     if (dismissed && daysSince(dismissed) < REMINDER_AFTER_DAYS) return false;
     return true;
