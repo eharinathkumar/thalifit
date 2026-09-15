@@ -2,7 +2,9 @@
 
 **Document status:** Current operational SOP for the Thalify TWA only. Keep this separate from the native Android SOP.
 
-**Current locked TWA baseline:** v5.6.17
+**Current locked TWA baseline:** v5.6.17 + TWA-QC2 recovery/update regression gate
+
+**Latest lock date:** 2026-09-15
 
 **Repository:** `eharinathkumar/thalifit`
 
@@ -18,10 +20,11 @@ This document is the source of truth for the Thalify Trusted Web Activity / PWA 
 4. No user-facing native browser `alert()`, `confirm()`, or `prompt()` is acceptable. All user interactions must use Thalify-branded in-app dialogs with action-specific wording.
 5. Any regression found by a real user should become a deterministic automated test whenever practical.
 6. A build is not considered QC-clean merely because the homepage loads. Persona journeys, mobile layout, persistence, destructive actions, service-worker behavior, and recovery paths are part of the release gate.
+7. A failed QC run is never silently ignored. Record whether the failure was an app regression, environment problem, or harness defect; fix the cause; then rerun the complete applicable gate.
 
-## 3. Current TWA baseline — v5.6.17
+## 3. Current TWA baseline — v5.6.17 + QC2
 
-v5.6.17 is the current locked TWA regression baseline.
+v5.6.17 remains the current app/runtime baseline. TWA-QC2 is now the locked permanent recovery/update regression layer on top of that baseline.
 
 ### 3.1 Branded dialog layer
 
@@ -43,11 +46,28 @@ The permanent Playwright harness runs on:
 - Chromium — Android/TWA-oriented browser path
 - WebKit — iPhone/Home-Screen-oriented browser path
 
-The four longitudinal QC personas are intentionally different in diet, cuisines, allergies, food history, units, goals, and activity patterns. The suite exercises Today, Kitchen, Trends, Profile, weekly check-in, local persistence, mobile overflow, browser errors, screenshots, and native-dialog interception.
+The four longitudinal QC personas are intentionally different in diet, cuisines, allergies, food history, units, goals, and activity patterns. The suite exercises Today, Kitchen, Trends, Profile, weekly check-in, local persistence, mobile overflow, browser errors, screenshots, native-dialog interception, backup/restore recovery, and installed-PWA update behavior.
 
 ### 3.3 Current QC result
 
-The v5.6.17 gate completed successfully with the static shell gate plus the Android-Chromium and iPhone-WebKit persona suite. This is the minimum regression baseline for future TWA pull requests.
+**TWA-QC2 locked PASS — 2026-09-15.** GitHub Actions TWA QC run #6 passed the static shell gate and the complete Android-Chromium + iPhone-WebKit persona/recovery suite against commit `f1e46fae953caad35090fa04457ae5ecfc7e6f8e`.
+
+The QC2 suite now permanently verifies:
+
+- backup → erase local Thalify state → restore → exact persisted-state comparison
+- rendered profile recovery after restore
+- simulated prior-version installed-PWA cache
+- current service-worker activation
+- stale cache removal
+- current Thalify shell/version marker after update
+- stale shell not rendered
+- zero unexpected native browser dialogs, page errors, or console errors in these recovery paths
+
+### 3.4 QC2 audit note
+
+The initial QC2 run #5 failed in the upgrade regression test. Investigation of the Playwright artifacts showed that the stale cache had actually been removed and the current v5.6.17 QC layer had loaded correctly. The harness had incorrectly treated `data-thalify-twa-feature-release` as the global app version; that marker belongs to the older meal-pack feature layer and intentionally reports its own feature version (`5.6.14`).
+
+The regression assertion was corrected to use the authoritative current-shell marker `window.__thalifyQC.version` and to verify the branded-dialog layer. The complete gate was rerun rather than bypassed. Run #6 then passed. This was classified as a **QC harness defect, not a production stale-cache regression**.
 
 ## 4. QC persona matrix
 
@@ -94,7 +114,7 @@ A TWA release candidate is considered QC-clean only when all applicable sections
 
 ### Gate D — recovery and upgrade regression
 
-Beginning with the post-v5.6.17 QC extension, the harness also covers:
+TWA-QC2 makes the following permanent:
 
 - full `mdp_*` Thalify state snapshot
 - simulated backup creation
@@ -107,11 +127,13 @@ Beginning with the post-v5.6.17 QC extension, the harness also covers:
 - deletion/supersession of stale TWA cache
 - verification that the current shell—not the stale shell—is rendered after update
 
-The recovery/upgrade test is intended to prevent recurrence of installed-PWA users remaining on an obsolete shell after a release.
+The recovery/upgrade test is intended to prevent recurrence of installed-PWA users remaining on an obsolete shell after a release and to guard against data-loss regressions during recovery.
 
 ## 6. QC artifact policy
 
 Every CI QC run should retain artifacts that make failures diagnosable. Current expected artifacts include screenshots for persona tabs, weekly check-in, branded dialogs, recovery before/after state, and current-shell upgrade verification. Failure traces/screenshots should be retained whenever Playwright produces them.
+
+When a gate fails, inspect the artifacts before changing production code. Do not weaken an assertion merely to obtain a green result; first establish whether the failure is in the product, test harness, or environment.
 
 ## 7. Versioning and release procedure
 
@@ -131,6 +153,8 @@ For each future TWA feature release:
 12. after merge, verify deployed version/service worker on the public TWA path
 13. save a dated locked SOP snapshot for major milestones
 
+QC-only harness/SOP changes do not require an app-version bump when they do not change runtime product behavior. They still require the complete applicable QC gate before merge.
+
 ## 8. Roadmap
 
 ### Phase TWA-QC1 — complete / locked
@@ -144,13 +168,15 @@ For each future TWA feature release:
 - mobile overflow checks
 - QC screenshot artifacts
 
-### Phase TWA-QC2 — active
+### Phase TWA-QC2 — complete / locked 2026-09-15
 
 - backup → erase → restore regression
 - stale installed-PWA → current service-worker migration regression
 - exact persisted-state comparison after restore
 - stale-cache deletion assertion
+- current-shell verification after upgrade
 - separate TWA SOP/current-state tracking
+- failed-run classification and rerun discipline validated in practice
 
 ### Phase TWA-QC3 — next recommended hardening
 
@@ -181,8 +207,20 @@ As native Android becomes the primary production client, keep the TWA stable and
 
 The TWA remains a layered versioned-script application with older legacy behavior underneath newer compatibility layers. v5.6.17 safely intercepts legacy browser dialogs, but the long-term preferred state is to remove obsolete direct `alert/confirm/prompt` code at the source rather than rely indefinitely on interception.
 
+Some older feature layers expose their own feature-release data attributes. Those are not authoritative global app-version markers. Global release/update QC must use the newest shell/QC release marker or another explicitly designated global build identifier.
+
 The service worker is a critical production component because users may retain previously cached shells. Any future release that changes loading behavior must be tested as an upgrade from an already-installed older PWA, not only as a clean install.
 
 ## 10. Definition of done for future TWA work
 
 A TWA task is done only when the implementation works, the applicable regression test exists, the complete TWA QC gate is green, the resulting screenshots/artifacts have been reviewed for obvious visual defects, this SOP reflects any baseline/roadmap change, and the change is merged to `main` only after those checks.
+
+## 11. Locked milestone record
+
+- **Baseline:** Thalify TWA v5.6.17
+- **QC layer:** TWA-QC2
+- **Lock date:** 2026-09-15
+- **Passing workflow:** TWA QC run #6
+- **Passing commit:** `f1e46fae953caad35090fa04457ae5ecfc7e6f8e`
+- **Gate status:** Static shell PASS; Android-Chromium + iPhone-WebKit persona/recovery PASS
+- **Next recommended phase:** TWA-QC3 backup-file/offline/update-in-place/theme/tablet hardening
