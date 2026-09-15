@@ -1,0 +1,47 @@
+name: TWA QC
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'manifest.json'
+      - 'sw.js'
+      - 'twa-v*.js'
+      - 'package.json'
+      - 'playwright.config.js'
+      - 'qc/**'
+      - '.github/workflows/twa-qc.yml'
+  workflow_dispatch:
+
+jobs:
+  static:
+    name: Static shell gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm run qc:static
+
+  browser:
+    name: Android + iPhone persona QC
+    needs: static
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run qc:twa
+      - name: Upload QC artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: twa-qc-${{ github.sha }}
+          path: qc-output/
+          if-no-files-found: warn
